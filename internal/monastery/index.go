@@ -30,13 +30,13 @@ type indexVariables struct {
 
 const indexHTML = siteHeaderHTML +
 	`<article>
-	<hr>
-	<h1 id="listing-title">Articles</h1>
-	<hr>
-	<ul>{{range $k, $v := .Content.SortedArticles}}
-	<li><a href="{{$v.Route}}">{{$v.FormattedCreated}} - {{$v.Title}}</a></li>{{end}}
-	</ul>
-	</article>` +
+<hr>
+<h1 id="index-title">Articles</h1>
+<hr>
+<ul>{{range $k, $v := .Content.SortedArticles}}
+<li><a href="{{$v.Route}}">{{$v.FormattedCreated}} - {{$v.Title}}</a></li>{{end}}
+</ul>
+</article>` +
 	siteFooterHTML
 
 var indexTemplate = template.Must(template.New("index").Parse(indexHTML))
