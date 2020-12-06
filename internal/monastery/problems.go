@@ -29,7 +29,6 @@ import (
 
 type problemVariables struct {
 	Config Config
-	Root   *Article
 	Title  string
 	Detail string
 }
@@ -61,7 +60,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 
 // GetProblem returns an HTTP handler that responds to a request with a document
 // describing a particular problem
-func GetProblem(rootDoc *Article, config Config) func(w http.ResponseWriter, r *http.Request) {
+func GetProblem(config Config) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
@@ -78,7 +77,6 @@ func GetProblem(rootDoc *Article, config Config) func(w http.ResponseWriter, r *
 
 		vars := problemVariables{
 			Config: config,
-			Root:   rootDoc,
 			Title:  problemID,
 			Detail: problemID,
 		}

@@ -22,6 +22,8 @@ type Config struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 
+	Pinned []string `json:"pinned"`
+
 	ContentPath string `json:"content_path"`
 	StaticPath  string `json:"static_path"`
 

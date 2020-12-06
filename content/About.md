@@ -1,6 +1,5 @@
 Title: About
 Created: 2020-11-04
-Navbar: true
 Tag: Example
 Tag: Markdown
 === markdown ===

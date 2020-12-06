@@ -49,6 +49,8 @@ func main() {
 			Name:        "Monastery",
 			Description: "Monastery is a simple content management server",
 
+			Pinned: []string{"About", "Contact"},
+
 			StaticPath:  "static",
 			ContentPath: "content",
 
@@ -65,18 +67,18 @@ func main() {
 
 	staticFileServer := http.FileServer(http.Dir(config.StaticPath))
 
-	rootArticle := monastery.ScanContent(config)
+	content := monastery.ScanContent(config)
 
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", monastery.GetIndex(rootArticle, config))
-		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(rootArticle, config))
+		r.Get("/", monastery.GetIndex(content, config))
+		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(content, config))
 	})
 
 	r.Route("/"+monastery.ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(monastery.ProblemsCtx)
-			r.Get("/", monastery.GetProblem(rootArticle, config))
+			r.Get("/", monastery.GetProblem(config))
 		})
 	})
 

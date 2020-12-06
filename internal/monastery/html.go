@@ -28,8 +28,8 @@ const siteHeaderHTML = `<!DOCTYPE html>
 <div id="site-header">
 	<h1 id="site-title">{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</h1>
 	<div id="site-navigation">
-	<a href="/">Latest</a>{{range $k, $v := .Root.Articles}}
-	<a href="{{$v.Route}}">{{$v.Title}}</a>{{end}}
+	<a href="/">Articles</a>{{range $k, $v := .Config.Pinned}}
+	<a href="/{{$v}}">{{$v}}</a>{{end}}
 	</div>
 </div>
 <div id="content">
