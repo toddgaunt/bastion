@@ -21,34 +21,69 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
+	"sort"
 )
 
 type indexVariables struct {
 	Config Config
 	Root   *Article
+	Latest []*Article
 }
 
 const indexHTML = siteHeaderHTML +
-	"<article><p>{{if .Config.Description}}{{.Config.Description}}{{else}}No description available{{end}}</p></article>" +
+	`<article>
+	<hr>
+	<h1 id="listing-title">Latest</h1>
+	<hr>
+	<ul>{{range $k, $v := .Latest}}
+	<li><a href="{{$v.Route}}">{{$v.FormattedCreated}} - {{$v.Title}}</a></li>{{end}}
+	</ul>
+	</article>` +
 	siteFooterHTML
 
 var indexTemplate = template.Must(template.New("index").Parse(indexHTML))
 
+func flattenArticles(rootDoc *Article, acc []*Article) []*Article {
+	for _, v := range rootDoc.Articles {
+		if v.Articles != nil {
+			acc = append(acc, flattenArticles(v, acc)...)
+		} else {
+			acc = append(acc, v)
+		}
+	}
+
+	return acc
+}
+
+func latestArticles(rootDoc *Article) []*Article {
+	latest := flattenArticles(rootDoc, []*Article{})
+	sort.SliceStable(latest, func(i int, j int) bool {
+		return latest[i].Created.After(latest[j].Created)
+	})
+
+	if len(latest) > 5 {
+		return latest[:5]
+	} else {
+		return latest
+	}
+}
+
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index
 func GetIndex(rootDoc *Article, config Config) func(w http.ResponseWriter, r *http.Request) {
-	vars := indexVariables{
-		Config: config,
-		Root:   rootDoc,
-	}
-
 	// Actions to perform for every request
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
+		vars := indexVariables{
+			Config: config,
+			Root:   rootDoc,
+			Latest: latestArticles(rootDoc),
+		}
 
 		buf := &bytes.Buffer{}
 		indexTemplate.Execute(buf, vars)
 		w.Header().Add("Content-Type", "text/html")
 		w.Write(buf.Bytes())
+
 		return nil
 	}
 

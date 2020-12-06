@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</title>
+  <meta name="description" content="{{.Config.Description}}">
+  {{if .Config.DefaultStyle}}<link href="/.static/styles/{{.Config.DefaultStyle}}.css" type="text/css" rel="stylesheet">{{end}}
+</head>
+<body>
+<div id="site-header">
+	<h1 id="site-title">{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</h1>
+	<div id="site-navigation">
+	<a href="/">Home</a>
+  {{range $k, $v := .Root.Articles}}
+	<a href="{{$v.Route}}">{{$v.Title}}</a>
+  {{end}}
+	</div>
+</div>
+<div id="content">
+<article>
+  <hr>
+  {{if .Title}}
+    <h1 id="article-title">{{.Title}}</h1>
+  {{end}}
+  {{if .Description}}
+    <p id="article-description">{{.Description}}</p>
+  {{end}}
+  <hr>
+  {{if .SortedArticles}}
+    <ul>{{range $k, $v := .SortedArticles}}
+      <li><a href="{{$v.Route}}">{{$v.FormattedCreated}} - {{$v.Title}}</a></li>{{end}}
+    </ul>
+  {{else}}
+    {{.Data}}
+  {{end}}
+</article>
+</div>
+</body>
+</html>
