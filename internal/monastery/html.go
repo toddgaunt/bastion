@@ -29,7 +29,7 @@ const siteHeaderHTML = `<!DOCTYPE html>
 	<h1 id="site-title">{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</h1>
 	<div id="site-navigation">
 	<a href="/">Articles</a>{{range $k, $v := .Config.Pinned}}
-	<a href="/{{$v}}">{{$v}}</a>{{end}}
+	<a href="/{{$v}}">{{$k}}</a>{{end}}
 	</div>
 </div>
 <div id="content">

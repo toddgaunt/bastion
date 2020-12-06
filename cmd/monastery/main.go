@@ -49,7 +49,7 @@ func main() {
 			Name:        "Monastery",
 			Description: "Monastery is a simple content management server",
 
-			Pinned: []string{"About", "Contact"},
+			Pinned: map[string]string{"About": "about", "Contact": "contact"},
 
 			StaticPath:  "static",
 			ContentPath: "content",
