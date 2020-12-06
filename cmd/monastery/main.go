@@ -19,6 +19,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -29,19 +30,30 @@ import (
 )
 
 func main() {
-	var config monastery.Config
+	var port int
+	var tlsCert string
+	var tlsKey string
+
+	flag.IntVar(&port, "port", 8000, "Specify a port to serve and list to")
+	flag.StringVar(&tlsCert, "cert", "", "Path to TLS Certificate")
+	flag.StringVar(&tlsKey, "key", "", "Path to TLS Key")
+
+	flag.Parse()
 
 	data, err := ioutil.ReadFile("config.json")
 
+	var config monastery.Config
 	if err != nil {
 		log.Print("using default config")
 		config = monastery.Config{
-			Port:         8080,
-			StaticPath:   "static",
-			ContentPath:  "content",
-			Name:         "Monastery",
-			Description:  "Monastery is a simple content management server",
+			Name:        "Monastery",
+			Description: "Monastery is a simple content management server",
+
+			StaticPath:  "static",
+			ContentPath: "content",
+
 			DefaultStyle: "default",
+
 			ScanInterval: 60,
 		}
 	} else {
@@ -70,11 +82,11 @@ func main() {
 
 	r.Handle("/.static/*", http.StripPrefix("/.static/", staticFileServer))
 
-	addr := fmt.Sprintf(":%d", config.Port)
+	addr := fmt.Sprintf(":%d", port)
 
-	if config.TLSCert != "" && config.TLSKey != "" {
+	if tlsCert != "" && tlsKey != "" {
 		// TLS can be used
-		log.Fatal(http.ListenAndServeTLS(addr, config.TLSCert, config.TLSKey, r))
+		log.Fatal(http.ListenAndServeTLS(addr, tlsCert, tlsKey, r))
 	} else {
 		// Allow non-TLS for use until a certificate can be acquired
 		log.Fatal(http.ListenAndServe(addr, r))

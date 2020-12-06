@@ -19,13 +19,13 @@ package monastery
 
 // Config contains all website configuration options for a Monastery website
 type Config struct {
-	Port         int    `json:"port"`
-	TLSCert      string `json:"tls_cert"`
-	TLSKey       string `json:"tls_key"`
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	ContentPath  string `json:"content_path"`
-	StaticPath   string `json:"static_path"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+
+	ContentPath string `json:"content_path"`
+	StaticPath  string `json:"static_path"`
+
 	DefaultStyle string `json:"default_style"`
-	ScanInterval int    `json:"scan_interval"`
+
+	ScanInterval int `json:"scan_interval"`
 }
