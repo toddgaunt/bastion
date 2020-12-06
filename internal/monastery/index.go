@@ -24,22 +24,14 @@ import (
 )
 
 type indexVariables struct {
-	Config  Config
-	Content *Content
+	Title       string
+	Description string
+	Style       string
+	Pinned      map[string]string
+	Content     *Content
 }
 
-const indexHTML = siteHeaderHTML +
-	`<article>
-<hr>
-<h1 id="index-title">Articles</h1>
-<hr>
-<ul>{{range $k, $v := .Content.SortedArticles}}
-<li><a href="{{$v.Route}}">{{$v.FormattedCreated}} - {{$v.Title}}</a></li>{{end}}
-</ul>
-</article>` +
-	siteFooterHTML
-
-var indexTemplate = template.Must(template.New("index").Parse(indexHTML))
+var indexTemplate = template.Must(template.ParseFiles("templates/index.html"))
 
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index
@@ -47,8 +39,11 @@ func GetIndex(content *Content, config Config) func(w http.ResponseWriter, r *ht
 	// Actions to perform for every request
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		vars := indexVariables{
-			Config:  config,
-			Content: content,
+			Title:       config.Title,
+			Description: config.Description,
+			Style:       config.Style,
+			Pinned:      config.Pinned,
+			Content:     content,
 		}
 
 		buf := &bytes.Buffer{}

@@ -20,13 +20,13 @@ package monastery
 const siteHeaderHTML = `<!DOCTYPE html>
 <html>
 <head>
-  <title>{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</title>
+  <title>{{if .Config.Title}}{{.Config.Title}}{{else}}Site{{end}}</title>
   <meta name="description" content="{{.Config.Description}}">
-  {{if .Config.DefaultStyle}}<link href="/.static/styles/{{.Config.DefaultStyle}}.css" type="text/css" rel="stylesheet">{{end}}
+  {{if .Config.Style}}<link href="/.static/styles/{{.Config.Style}}.css" type="text/css" rel="stylesheet">{{end}}
 </head>
 <body>
 <div id="site-header">
-	<h1 id="site-title">{{if .Config.Name}}{{.Config.Name}}{{else}}Site{{end}}</h1>
+	<h1 id="site-title">{{if .Config.Title}}{{.Config.Title}}{{else}}Site{{end}}</h1>
 	<div id="site-navigation">
 	<a href="/">Articles</a>{{range $k, $v := .Config.Pinned}}
 	<a href="/{{$v}}">{{$k}}</a>{{end}}

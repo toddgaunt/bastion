@@ -46,7 +46,7 @@ func main() {
 	if err != nil {
 		log.Print("using default config")
 		config = monastery.Config{
-			Name:        "Monastery",
+			Title:       "Monastery",
 			Description: "Monastery is a simple content management server",
 
 			Pinned: map[string]string{"About": "about", "Contact": "contact"},
@@ -54,7 +54,7 @@ func main() {
 			StaticPath:  "static",
 			ContentPath: "content",
 
-			DefaultStyle: "default",
+			Style: "default",
 
 			ScanInterval: 60,
 		}

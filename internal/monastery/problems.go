@@ -28,27 +28,15 @@ import (
 )
 
 type problemVariables struct {
-	Config Config
-	Title  string
-	Detail string
+	Title       string
+	Description string
+	Style       string
+	Pinned      map[string]string
 }
 
 const problemsCtxKey = "problemID"
 
-const problemHeaderHTML = siteHeaderHTML + `
-<article>
-<hr>
-<h1 id="problem-title">{{.Title}}</h1>
-<hr>
-`
-
-const problemFooterHTML = siteFooterHTML + `
-</article>
-</body>
-</html>`
-
-var problemHeaderTemplate = template.Must(template.New("problemHeader").Parse(problemHeaderHTML))
-var problemFooterTemplate = template.Must(template.New("problemFooter").Parse(problemFooterHTML))
+var problemTemplate = template.Must(template.ParseFiles("templates/problem.html"))
 
 func ProblemsCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -67,24 +55,25 @@ func GetProblem(config Config) func(w http.ResponseWriter, r *http.Request) {
 		description := ""
 
 		switch problemID {
+		case "article-not-found":
+			description = `This article does not exist`
 		case "not-found":
-			description = `<p>There was no content available</p>`
+			description = `There was no content available`
 		case "internal-server-error":
-			description = `<p>The server experienced an error which was no fault of the client</p>`
+			description = `The server experienced an error which was no fault of the client`
 		default:
 			return &ProblemJSON{Status: http.StatusNotFound, Detail: fmt.Sprintf("Explanation for %s does not exist", problemID)}
 		}
 
 		vars := problemVariables{
-			Config: config,
-			Title:  problemID,
-			Detail: problemID,
+			Title:       problemID,   // problem.Title
+			Description: description, // problem.Detail
+			Style:       config.Style,
+			Pinned:      config.Pinned,
 		}
 
 		buf := &bytes.Buffer{}
-		problemHeaderTemplate.Execute(buf, vars)
-		buf.WriteString(description)
-		problemFooterTemplate.Execute(buf, vars)
+		problemTemplate.Execute(buf, vars)
 		w.Write([]byte(buf.String()))
 
 		return nil

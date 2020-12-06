@@ -36,11 +36,19 @@ import (
 	"toddgaunt.com/monastery/internal/document"
 )
 
+type articleVariables struct {
+	Title       string
+	Description string
+	Style       string
+	Pinned      map[string]string
+	HTML        template.HTML
+}
+
 type Content struct {
 	Articles map[string]*Article
 }
 
-func (content Content) SortedArticles() []*Article {
+func (content Content) Sorted() []*Article {
 	var sorted []*Article
 	// Created a list of nested articles sorted by date
 	for _, v := range content.Articles {
@@ -66,25 +74,17 @@ type Article struct {
 	Created     time.Time
 	Updated     time.Time
 
-	Data    []byte
+	HTML    template.HTML
 	Problem *ProblemJSON
 }
 
-func (article Article) FormattedCreated() string {
+func (article Article) FormattedDate() string {
 	return article.Created.Format("2006-01-02")
-}
-
-type articleVariables struct {
-	Config Config
 }
 
 const articlesCtxKey = "articleID"
 
-const articleHeaderHTML = siteHeaderHTML
-const articleFooterHTML = siteFooterHTML
-
-var articleHeaderTemplate = template.Must(template.New("articleHeader").Parse(articleHeaderHTML))
-var articleFooterTemplate = template.Must(template.New("articleFooter").Parse(articleFooterHTML))
+var articleTemplate = template.Must(template.ParseFiles("templates/article.html"))
 
 // ArticlesCtx is middleware for a router to provide a clean path to an article
 // for an HTTPHandler
@@ -114,13 +114,15 @@ func GetArticle(content *Content, config Config) func(w http.ResponseWriter, r *
 		}
 
 		vars := articleVariables{
-			Config: config,
+			Title:       article.Title,
+			Description: article.Description,
+			Style:       config.Style,
+			Pinned:      config.Pinned,
+			HTML:        article.HTML,
 		}
 
 		buf := &bytes.Buffer{}
-		articleHeaderTemplate.Execute(buf, vars)
-		buf.Write(article.Data)
-		articleFooterTemplate.Execute(buf, vars)
+		articleTemplate.Execute(buf, vars)
 
 		w.Header().Add("Content-Type", "text/html")
 		w.Write(buf.Bytes())
@@ -173,12 +175,14 @@ func GenerateArticles(dir string) (map[string]*Article, error) {
 		article.Author = doc.Properties.Value("Author")
 		article.Created = ParseDate(doc.Properties.Value("Created"))
 
-		article.Data, err = document.GenerateHTML(doc)
+		bytes, err := document.GenerateHTML(doc)
 		if err != nil {
 			article.Problem = &ProblemJSON{Title: "Could not generate HTML from document", Status: http.StatusInternalServerError, Detail: err.Error()}
 			articles[articleID] = article
 			return nil
 		}
+
+		article.HTML = template.HTML(bytes)
 
 		log.Printf("route: %s\n", article.Route)
 		articles[articleID] = article
