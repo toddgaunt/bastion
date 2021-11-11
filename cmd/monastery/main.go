@@ -35,8 +35,8 @@ func main() {
 	var tlsKey string
 
 	flag.IntVar(&port, "port", 8080, "Specify a port to serve and list to")
-	flag.StringVar(&tlsCert, "cert", "", "Path to TLS Certificate")
-	flag.StringVar(&tlsKey, "key", "", "Path to TLS Key")
+	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS Certificate for HTTPS")
+	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS Key for HTTPS")
 
 	flag.Parse()
 
