@@ -61,7 +61,7 @@ func main() {
 	} else {
 		err := json.Unmarshal(data, &config)
 		if err != nil {
-			log.Fatal("couldn't load config: %v", err)
+			log.Fatalf("couldn't load config: %v", err)
 		}
 	}
 
