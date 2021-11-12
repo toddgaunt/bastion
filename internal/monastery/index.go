@@ -47,7 +47,11 @@ func GetIndex(content *Content, config Config) func(w http.ResponseWriter, r *ht
 		}
 
 		buf := &bytes.Buffer{}
+
+		content.mutex.RLock()
 		indexTemplate.Execute(buf, vars)
+		content.mutex.RUnlock()
+
 		w.Header().Add("Content-Type", "text/html")
 		w.Write(buf.Bytes())
 

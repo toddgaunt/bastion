@@ -30,6 +30,7 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/go-chi/chi"
@@ -45,15 +46,21 @@ type articleVariables struct {
 }
 
 type Content struct {
+	mutex    sync.RWMutex
 	Articles map[string]*Article
 }
 
 func (content Content) Sorted() []*Article {
 	var sorted []*Article
+
+	//NOTE: critical section begin
+	content.mutex.RLock()
 	// Created a list of nested articles sorted by date
 	for _, v := range content.Articles {
 		sorted = append(sorted, v)
 	}
+	content.mutex.RUnlock()
+	//NOTE: critical section end
 
 	sort.Slice(sorted, func(i int, j int) bool {
 		return sorted[i].Title < sorted[j].Title
@@ -103,6 +110,9 @@ func ArticlesCtx(next http.Handler) http.Handler {
 func GetArticle(content *Content, config Config) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		articleID := r.Context().Value(articlesCtxKey).(string)
+
+		//NOTE: critical section begin
+		content.mutex.RLock()
 		article, ok := content.Articles[articleID]
 
 		if !ok {
@@ -123,6 +133,8 @@ func GetArticle(content *Content, config Config) func(w http.ResponseWriter, r *
 
 		buf := &bytes.Buffer{}
 		articleTemplate.Execute(buf, vars)
+		content.mutex.RUnlock()
+		//NOTE: critical section end
 
 		w.Header().Add("Content-Type", "text/html")
 		w.Write(buf.Bytes())
@@ -210,7 +222,11 @@ func ScanContent(config Config) *Content {
 
 	go func() {
 		// TODO(todd): Scan periodically
+		//NOTE: critical section begin
+		content.mutex.Lock()
 		content.Articles, _ = GenerateArticles(config.ContentPath)
+		content.mutex.Unlock()
+		//NOTE: critical section end
 	}()
 
 	return content
