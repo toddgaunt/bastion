@@ -18,7 +18,7 @@
   <h1 id="index-title">Articles</h1>
   <hr>
   <ul>
-    {{range $k, $v := .Content.Sorted}}
+    {{range $k, $v := .SortedIndex}}
       <li><a href="{{$v.Route}}">{{$v.FormattedDate}} - {{$v.Title}}</a></li>
     {{end}}
   </ul>

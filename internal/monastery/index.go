@@ -21,6 +21,7 @@ import (
 	"bytes"
 	"html/template"
 	"net/http"
+	"sort"
 )
 
 type indexVariables struct {
@@ -32,6 +33,32 @@ type indexVariables struct {
 }
 
 var indexTemplate = template.Must(template.ParseFiles("templates/index.html"))
+
+func (vars indexVariables) SortedIndex() []*Article {
+	var sorted []*Article
+
+	//NOTE: critical section begin
+	vars.Content.mutex.RLock()
+	// Created a list of nested articles sorted by date
+	for _, v := range vars.Content.Articles {
+		// Only add unpinned articles to the index
+		if _, ok := vars.Pinned[v.Title]; !ok {
+			sorted = append(sorted, v)
+		}
+	}
+	vars.Content.mutex.RUnlock()
+	//NOTE: critical section end
+
+	sort.Slice(sorted, func(i int, j int) bool {
+		return sorted[i].Title < sorted[j].Title
+	})
+
+	sort.Slice(sorted, func(i int, j int) bool {
+		return sorted[i].Created.After(sorted[j].Created)
+	})
+
+	return sorted
+}
 
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index

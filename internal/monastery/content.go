@@ -28,7 +28,6 @@ import (
 	"os"
 	"path"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -48,29 +47,6 @@ type articleVariables struct {
 type Content struct {
 	mutex    sync.RWMutex
 	Articles map[string]*Article
-}
-
-func (content Content) Sorted() []*Article {
-	var sorted []*Article
-
-	//NOTE: critical section begin
-	content.mutex.RLock()
-	// Created a list of nested articles sorted by date
-	for _, v := range content.Articles {
-		sorted = append(sorted, v)
-	}
-	content.mutex.RUnlock()
-	//NOTE: critical section end
-
-	sort.Slice(sorted, func(i int, j int) bool {
-		return sorted[i].Title < sorted[j].Title
-	})
-
-	sort.Slice(sorted, func(i int, j int) bool {
-		return sorted[i].Created.After(sorted[j].Created)
-	})
-
-	return sorted
 }
 
 type Article struct {
