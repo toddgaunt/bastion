@@ -27,8 +27,7 @@ import (
 type indexVariables struct {
 	Title       string
 	Description string
-	Style       string
-	Pinned      map[string]string
+	Site        SiteConfig
 	Content     *Content
 }
 
@@ -40,7 +39,7 @@ func (vars indexVariables) SortedIndex() []*Article {
 	// Created a list of nested articles sorted by date
 	for _, v := range vars.Content.Articles {
 		// Only add unpinned articles to the index
-		if _, ok := vars.Pinned[v.Title]; !ok {
+		if _, ok := vars.Site.Pinned[v.Title]; !ok {
 			sorted = append(sorted, v)
 		}
 	}
@@ -60,14 +59,13 @@ func (vars indexVariables) SortedIndex() []*Article {
 
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index
-func GetIndex(content *Content, config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
+func GetIndex(tmpl *template.Template, config SiteConfig, content *Content) func(w http.ResponseWriter, r *http.Request) {
 	// Actions to perform for every request
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		vars := indexVariables{
-			Title:       config.Title,
+			Title:       config.Name,
 			Description: config.Description,
-			Style:       config.Style,
-			Pinned:      config.Pinned,
+			Site:        config,
 			Content:     content,
 		}
 

@@ -31,17 +31,6 @@ import (
 	"toddgaunt.com/monastery/internal/monastery"
 )
 
-var defaultConfig = monastery.Config{
-	Title:       "Monastery",
-	Description: "Monastery is a simple content management server",
-
-	Pinned: map[string]string{"About": "about", "Contact": "contact"},
-
-	Style: "default",
-
-	ScanInterval: 60,
-}
-
 func main() {
 	var port int
 	var tlsCert string
@@ -62,16 +51,20 @@ func main() {
 
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 
-	var config monastery.Config
+	var config Config
 	if err != nil {
 		log.Print("using default configuration")
-		config = defaultConfig
+		config = DefaultConfig
 	} else {
 		err := json.Unmarshal(data, &config)
 		if err != nil {
 			log.Fatalf("couldn't load config: %v", err)
 		}
 	}
+
+	config.Network.Port = port
+	config.Network.TLSCert = tlsCert
+	config.Network.TLSKey = tlsKey
 
 	indexTemplate, err := template.ParseFiles(prefixDir + "/templates/index.html")
 	if err != nil {
@@ -88,26 +81,26 @@ func main() {
 
 	staticFileServer := http.FileServer(http.Dir(prefixDir + "/static"))
 
-	content := monastery.ScanContent(prefixDir+"/content", config)
+	content := monastery.ScanContent(prefixDir+"/content", config.ScanInterval)
 
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", monastery.GetIndex(content, config, indexTemplate))
-		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(content, config, articleTemplate))
+		r.Get("/", monastery.GetIndex(indexTemplate, config.Site, content))
+		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(articleTemplate, config.Site, content))
 	})
 
 	r.Route("/"+monastery.ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(monastery.ProblemsCtx)
-			r.Get("/", monastery.GetProblem(config, problemTemplate))
+			r.Get("/", monastery.GetProblem(problemTemplate, config.Site))
 		})
 	})
 
 	r.Handle("/.static/*", http.StripPrefix("/.static/", staticFileServer))
 
-	addr := fmt.Sprintf(":%d", port)
+	addr := fmt.Sprintf(":%d", config.Network.Port)
 
-	if tlsCert != "" && tlsKey != "" {
+	if config.Network.TLSCert != "" && config.Network.TLSKey != "" {
 		// TLS can be used
 		log.Fatal(http.ListenAndServeTLS(addr, tlsCert, tlsKey, r))
 	} else {

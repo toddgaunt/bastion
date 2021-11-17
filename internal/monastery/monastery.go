@@ -1,4 +1,4 @@
-// Copyright 2020, Todd Gaunt <toddgaunt@protonmail.com>
+// Copyright 2021, Todd Gaunt <toddgaunt@protonmail.com>
 //
 // This file is part of Monastery.
 //
@@ -17,17 +17,12 @@
 
 package monastery
 
-// Config contains all website configuration options for a Monastery website
-type Config struct {
-	Title       string `json:"title"`
-	Description string `json:"description"`
-
-	ContentPath string `json:"content_path"`
-	StaticPath  string `json:"static_path"`
-
-	Pinned map[string]string `json:"pinned"`
-
-	Style string `json:"default_style"`
-
-	ScanInterval int `json:"scan_interval"`
+// SiteConfig contains all configuration for a Monastery website's commonindex and
+// content pages, such as website title, css style, and which articles are
+// pinned to the navigation bar instead of being indexed.
+type SiteConfig struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description"`
+	Style       string            `json:"style"`
+	Pinned      map[string]string `json:"pinned"`
 }

@@ -3,19 +3,20 @@
 <head>
   <title>{{.Title}}</title>
   <meta name="description" content="{{.Description}}">
-  <link href="/.static/styles/{{.Style}}.css" type="text/css" rel="stylesheet">
+  <link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
 </head>
 <body>
 <div id="site-navigation">
-  <a href="/">Articles</a>
-  {{range $name, $route := .Pinned}}
+  <a href="/">{{.Site.Name}}</a>
+  {{range $name, $route := .Site.Pinned}}
   <a href="/{{$route}}">{{$name}}</a>
   {{end}}
 </div>
 <div id="content">
 <article>
   <hr>
-  <h1 id="index-title">Articles</h1>
+  <h1 id="article-title">{{.Site.Name}}</h1>
+  <p id="article-description">{{.Site.Description}}</p>
   <hr>
   <ul>
     {{range $k, $v := .SortedIndex}}

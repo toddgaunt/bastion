@@ -30,8 +30,7 @@ import (
 type problemVariables struct {
 	Title       string
 	Description string
-	Style       string
-	Pinned      map[string]string
+	Site        SiteConfig
 }
 
 const problemsCtxKey = "problemID"
@@ -46,7 +45,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 
 // GetProblem returns an HTTP handler that responds to a request with a document
 // describing a particular problem
-func GetProblem(config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
+func GetProblem(tmpl *template.Template, config SiteConfig) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
@@ -66,8 +65,7 @@ func GetProblem(config Config, tmpl *template.Template) func(w http.ResponseWrit
 		vars := problemVariables{
 			Title:       problemID,   // problem.Title
 			Description: description, // problem.Detail
-			Style:       config.Style,
-			Pinned:      config.Pinned,
+			Site:        config,
 		}
 
 		buf := &bytes.Buffer{}

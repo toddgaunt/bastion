@@ -39,8 +39,7 @@ import (
 type articleVariables struct {
 	Title       string
 	Description string
-	Style       string
-	Pinned      map[string]string
+	Site        SiteConfig
 	HTML        template.HTML
 }
 
@@ -81,7 +80,7 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(content *Content, config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
+func GetArticle(tmpl *template.Template, config SiteConfig, content *Content) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
@@ -100,8 +99,7 @@ func GetArticle(content *Content, config Config, tmpl *template.Template) func(w
 		vars := articleVariables{
 			Title:       article.Title,
 			Description: article.Description,
-			Style:       config.Style,
-			Pinned:      config.Pinned,
+			Site:        config,
 			HTML:        article.HTML,
 		}
 
@@ -191,7 +189,7 @@ func ParseDate(date string) time.Time {
 }
 
 // ScanContent scans for articles for a given configuration
-func ScanContent(contentPath string, config Config) *Content {
+func ScanContent(contentPath string, scanInterval int) *Content {
 	content := &Content{}
 
 	go func() {
