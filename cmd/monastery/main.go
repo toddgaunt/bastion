@@ -25,7 +25,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
+	"path"
 
 	"github.com/go-chi/chi"
 	"toddgaunt.com/monastery/internal/monastery"
@@ -36,9 +36,6 @@ var defaultConfig = monastery.Config{
 	Description: "Monastery is a simple content management server",
 
 	Pinned: map[string]string{"About": "about", "Contact": "contact"},
-
-	StaticPath:  "static",
-	ContentPath: "content",
 
 	Style: "default",
 
@@ -56,16 +53,14 @@ func main() {
 
 	flag.Parse()
 
-	// Change working directory to whever the website content is
+	prefixDir := "."
+
 	args := flag.Args()
 	if len(args) >= 1 {
-		err := os.Chdir(args[0])
-		if err != nil {
-			log.Fatalf("couldn't change directory: %v", err)
-		}
+		prefixDir = path.Clean(args[0])
 	}
 
-	data, err := ioutil.ReadFile("config.json")
+	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 
 	var config monastery.Config
 	if err != nil {
@@ -78,22 +73,22 @@ func main() {
 		}
 	}
 
-	indexTemplate, err := template.ParseFiles("templates/index.html")
+	indexTemplate, err := template.ParseFiles(prefixDir + "/templates/index.html")
 	if err != nil {
 		log.Fatalf("couldn't load index template: %v", err)
 	}
-	articleTemplate, err := template.ParseFiles("templates/article.html")
+	articleTemplate, err := template.ParseFiles(prefixDir + "/templates/article.html")
 	if err != nil {
 		log.Fatalf("couldn't load article template: %v", err)
 	}
-	problemTemplate, err := template.ParseFiles("templates/problem.html")
+	problemTemplate, err := template.ParseFiles(prefixDir + "/templates/problem.html")
 	if err != nil {
 		log.Fatalf("couldn't load problem template: %v", err)
 	}
 
-	staticFileServer := http.FileServer(http.Dir(config.StaticPath))
+	staticFileServer := http.FileServer(http.Dir(prefixDir + "/static"))
 
-	content := monastery.ScanContent(config)
+	content := monastery.ScanContent(prefixDir+"/content", config)
 
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {

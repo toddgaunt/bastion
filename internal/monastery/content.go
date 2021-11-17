@@ -125,7 +125,7 @@ func GenerateArticles(dir string) (map[string]*Article, error) {
 	articles := make(map[string]*Article)
 
 	filepath.Walk(dir, func(articlePath string, info os.FileInfo, err error) error {
-		articleID := strings.TrimPrefix(articlePath[:len(articlePath)-len(path.Ext(articlePath))], dir+"/")
+		articleID := path.Base(articlePath[:len(articlePath)-len(path.Ext(articlePath))])
 
 		if strings.HasPrefix(articleID, ".") {
 			// Skip "hidden" files, since '.' is reserved for built-in routes
@@ -191,14 +191,14 @@ func ParseDate(date string) time.Time {
 }
 
 // ScanContent scans for articles for a given configuration
-func ScanContent(config Config) *Content {
+func ScanContent(contentPath string, config Config) *Content {
 	content := &Content{}
 
 	go func() {
 		// TODO(todd): Scan periodically
 		//NOTE: critical section begin
 		content.mutex.Lock()
-		content.Articles, _ = GenerateArticles(config.ContentPath)
+		content.Articles, _ = GenerateArticles(contentPath)
 		content.mutex.Unlock()
 		//NOTE: critical section end
 	}()
