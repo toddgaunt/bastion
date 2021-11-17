@@ -21,48 +21,74 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"html/template"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi"
 	"toddgaunt.com/monastery/internal/monastery"
 )
+
+var defaultConfig = monastery.Config{
+	Title:       "Monastery",
+	Description: "Monastery is a simple content management server",
+
+	Pinned: map[string]string{"About": "about", "Contact": "contact"},
+
+	StaticPath:  "static",
+	ContentPath: "content",
+
+	Style: "default",
+
+	ScanInterval: 60,
+}
 
 func main() {
 	var port int
 	var tlsCert string
 	var tlsKey string
 
-	flag.IntVar(&port, "port", 8080, "Specify a port to serve and list to")
+	flag.IntVar(&port, "port", 8080, "Specify a port to serve and listen to")
 	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS Certificate for HTTPS")
 	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS Key for HTTPS")
 
 	flag.Parse()
 
+	// Change working directory to whever the website content is
+	args := flag.Args()
+	if len(args) >= 1 {
+		err := os.Chdir(args[0])
+		if err != nil {
+			log.Fatalf("couldn't change directory: %v", err)
+		}
+	}
+
 	data, err := ioutil.ReadFile("config.json")
 
 	var config monastery.Config
 	if err != nil {
-		log.Print("using default config")
-		config = monastery.Config{
-			Title:       "Monastery",
-			Description: "Monastery is a simple content management server",
-
-			Pinned: map[string]string{"About": "about", "Contact": "contact"},
-
-			StaticPath:  "static",
-			ContentPath: "content",
-
-			Style: "default",
-
-			ScanInterval: 60,
-		}
+		log.Print("using default configuration")
+		config = defaultConfig
 	} else {
 		err := json.Unmarshal(data, &config)
 		if err != nil {
 			log.Fatalf("couldn't load config: %v", err)
 		}
+	}
+
+	indexTemplate, err := template.ParseFiles("templates/index.html")
+	if err != nil {
+		log.Fatalf("couldn't load index template: %v", err)
+	}
+	articleTemplate, err := template.ParseFiles("templates/article.html")
+	if err != nil {
+		log.Fatalf("couldn't load article template: %v", err)
+	}
+	problemTemplate, err := template.ParseFiles("templates/problem.html")
+	if err != nil {
+		log.Fatalf("couldn't load problem template: %v", err)
 	}
 
 	staticFileServer := http.FileServer(http.Dir(config.StaticPath))
@@ -71,14 +97,14 @@ func main() {
 
 	r := chi.NewRouter()
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", monastery.GetIndex(content, config))
-		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(content, config))
+		r.Get("/", monastery.GetIndex(content, config, indexTemplate))
+		r.With(monastery.ArticlesCtx).Get("/*", monastery.GetArticle(content, config, articleTemplate))
 	})
 
 	r.Route("/"+monastery.ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(monastery.ProblemsCtx)
-			r.Get("/", monastery.GetProblem(config))
+			r.Get("/", monastery.GetProblem(config, problemTemplate))
 		})
 	})
 

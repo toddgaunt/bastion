@@ -32,8 +32,6 @@ type indexVariables struct {
 	Content     *Content
 }
 
-var indexTemplate = template.Must(template.ParseFiles("templates/index.html"))
-
 func (vars indexVariables) SortedIndex() []*Article {
 	var sorted []*Article
 
@@ -62,7 +60,7 @@ func (vars indexVariables) SortedIndex() []*Article {
 
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index
-func GetIndex(content *Content, config Config) func(w http.ResponseWriter, r *http.Request) {
+func GetIndex(content *Content, config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
 	// Actions to perform for every request
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		vars := indexVariables{
@@ -76,7 +74,7 @@ func GetIndex(content *Content, config Config) func(w http.ResponseWriter, r *ht
 		buf := &bytes.Buffer{}
 
 		content.mutex.RLock()
-		indexTemplate.Execute(buf, vars)
+		tmpl.Execute(buf, vars)
 		content.mutex.RUnlock()
 
 		w.Header().Add("Content-Type", "text/html")

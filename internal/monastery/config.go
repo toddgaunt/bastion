@@ -19,13 +19,13 @@ package monastery
 
 // Config contains all website configuration options for a Monastery website
 type Config struct {
-	Title       string `json:"name"`
+	Title       string `json:"title"`
 	Description string `json:"description"`
-
-	Pinned map[string]string `json:"pinned"`
 
 	ContentPath string `json:"content_path"`
 	StaticPath  string `json:"static_path"`
+
+	Pinned map[string]string `json:"pinned"`
 
 	Style string `json:"default_style"`
 

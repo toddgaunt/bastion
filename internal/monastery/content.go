@@ -67,8 +67,6 @@ func (article Article) FormattedDate() string {
 
 const articlesCtxKey = "articleID"
 
-var articleTemplate = template.Must(template.ParseFiles("templates/article.html"))
-
 // ArticlesCtx is middleware for a router to provide a clean path to an article
 // for an HTTPHandler
 func ArticlesCtx(next http.Handler) http.Handler {
@@ -83,7 +81,7 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(content *Content, config Config) func(w http.ResponseWriter, r *http.Request) {
+func GetArticle(content *Content, config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
@@ -108,7 +106,7 @@ func GetArticle(content *Content, config Config) func(w http.ResponseWriter, r *
 		}
 
 		buf := &bytes.Buffer{}
-		articleTemplate.Execute(buf, vars)
+		tmpl.Execute(buf, vars)
 		content.mutex.RUnlock()
 		//NOTE: critical section end
 

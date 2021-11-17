@@ -36,8 +36,6 @@ type problemVariables struct {
 
 const problemsCtxKey = "problemID"
 
-var problemTemplate = template.Must(template.ParseFiles("templates/problem.html"))
-
 func ProblemsCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		problemID := chi.URLParam(r, problemsCtxKey)
@@ -48,7 +46,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 
 // GetProblem returns an HTTP handler that responds to a request with a document
 // describing a particular problem
-func GetProblem(config Config) func(w http.ResponseWriter, r *http.Request) {
+func GetProblem(config Config, tmpl *template.Template) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
@@ -73,7 +71,7 @@ func GetProblem(config Config) func(w http.ResponseWriter, r *http.Request) {
 		}
 
 		buf := &bytes.Buffer{}
-		problemTemplate.Execute(buf, vars)
+		tmpl.Execute(buf, vars)
 		w.Write([]byte(buf.String()))
 
 		return nil
