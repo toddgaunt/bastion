@@ -25,6 +25,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 
 	"github.com/go-chi/chi"
@@ -35,12 +36,23 @@ func main() {
 	var port int
 	var tlsCert string
 	var tlsKey string
+	var defaultConfig bool
 
 	flag.IntVar(&port, "port", 8080, "Specify a port to serve and listen to")
 	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS Certificate for HTTPS")
 	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS Key for HTTPS")
+	flag.BoolVar(&defaultConfig, "default-config", false, "Output default configuration")
 
 	flag.Parse()
+
+	if defaultConfig {
+		bytes, err := json.MarshalIndent(DefaultConfig, "", "    ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		fmt.Println(string(bytes))
+		os.Exit(0)
+	}
 
 	prefixDir := "."
 
