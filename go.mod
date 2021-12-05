@@ -1,4 +1,4 @@
-module toddgaunt.com/monastery
+module bastionburrow.com/bastion
 
 go 1.16
 

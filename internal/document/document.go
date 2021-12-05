@@ -1,35 +1,13 @@
-// Copyright 2020, Todd Gaunt <toddgaunt@protonmail.com>
-//
-// This file is part of Monastery.
-//
-// Monastery is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-//
-// Monastery is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with Monastery.  If not, see <https://www.gnu.org/licenses/>.
-
 package document
 
 import (
+	"errors"
 	"html/template"
+	"regexp"
 	"strings"
 
 	"github.com/gomarkdown/markdown"
 )
-
-type variables struct {
-	Title       string
-	Author      string
-	Description string
-	Created     string
-}
 
 const headerHTML = `<article>
 <hr>
@@ -44,8 +22,44 @@ const footerHTML = `</article>
 var headerTemplate = template.Must(template.New("header").Parse(headerHTML))
 var textTemplate = template.Must(template.New("text").Parse(`<pre>{{.}}</pre>`))
 
+type Document struct {
+	Properties Properties
+	Format     string
+	Content    []byte
+}
+
+// Parse parses bytes and returns a Document, or an error if the bytes did not
+// form a valid document representation
+func Parse(data []byte) (Document, error) {
+	re := regexp.MustCompile(`===.*===`)
+	index := re.FindIndex(data)
+	if index == nil {
+		return Document{}, errors.New("document does not have article delimiter")
+	}
+
+	properties, err := parseProperties(data[:index[0]])
+	if err != nil {
+		return Document{}, err
+	}
+	format := strings.TrimSpace(string(data[index[0]+3 : index[1]-3]))
+	content := data[index[1]:]
+
+	return Document{
+		Properties: properties,
+		Format:     format,
+		Content:    content,
+	}, nil
+}
+
 // GenerateHTML generates HTML from a given document
-func GenerateHTML(doc Document) ([]byte, error) {
+func (doc *Document) GenerateHTML() ([]byte, error) {
+	type variables struct {
+		Title       string
+		Author      string
+		Description string
+		Created     string
+	}
+
 	vars := variables{
 		Title:       doc.Properties.Value("Title"),
 		Description: doc.Properties.Value("Description"),

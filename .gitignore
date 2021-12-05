@@ -16,7 +16,6 @@
 
 # Whitelist specific files
 !/LICENSE
-!/COPYING
 !/Makefile
 !/go.mod
 !/go.sum
