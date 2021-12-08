@@ -51,15 +51,17 @@ clean() {
 package() {
     log "📦 packaging…"
     files=("bastion" "docs" "www.example.com")
-    tar -cf - "$files" -P | pv -s $(du -sb "$files" | awk '{print $1}') | pigz > "$package"
+    if ! tar -cf - "$files" -P | pv -s $(du -sb "$files" | awk '{print $1}') | pigz > "$package"; then
+        log-fatal "couldn't package $files"
+    fi
 }
 
 usage() {
-    echo "Usage: $me [build|clean|package|help]"
+    echo "Usage: $me [all|build|clean|package|help]"
 }
 
 main() {
-    subcommand=${1-build}
+    subcommand=${1-all}
     args=${@:2}
     case $subcommand in
         build)
@@ -70,6 +72,10 @@ main() {
             ;;
         package)
             package $args
+            ;;
+        all)
+            build
+            package
             ;;
         -h|--help|help)
             usage
