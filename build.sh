@@ -12,12 +12,12 @@ log() {
 }
 
 log-warn() {
-echo "[$me 🟡] $@"
+echo "[$me] 🟡 $@"
     warn=
 }
 
 log-fatal() {
-    echo "[$me 🔴] $@"
+    echo "[$me] 🔴 $@"
     exit 1
 }
 
@@ -90,11 +90,10 @@ main() {
 
 
 require \
-    basename \
     go \
+    pigz \
     pv \
     realpath \
-    pigz \
     tar
 
 main $@
