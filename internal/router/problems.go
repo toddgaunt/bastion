@@ -46,8 +46,8 @@ func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWrit
 		}
 
 		vars := problemVariables{
-			Title:       problemID,   // problem.Title
-			Description: description, // problem.Detail
+			Title:       problemID,
+			Description: description,
 			Site:        config,
 		}
 
