@@ -89,30 +89,33 @@ func GetArticle(tmpl *template.Template, config Config, content *Content) func(w
 		articleID := r.Context().Value(articlesCtxKey).(string)
 		log.Print(articleID)
 
-		//NOTE: critical section begin
-		content.mutex.RLock()
-		article, ok := content.Articles[articleID]
-		var problem *ProblemJSON
+		// The critical section is wrapped within a closure so defer can be
+		// used for the mutex operations.
+		var vars articleVariables
+		var problem = func() *ProblemJSON {
+			content.mutex.RLock()
+			defer content.mutex.RUnlock()
 
-		if !ok {
-			problem = &ProblemJSON{Title: "No Such Article", Status: http.StatusNotFound, Detail: fmt.Sprintf("Article %s does not exist", articleID)}
-		}
+			article, ok := content.Articles[articleID]
 
-		if article.Problem != nil {
-			problem = new(ProblemJSON)
-			*problem = *article.Problem
-		}
+			if !ok {
+				return &ProblemJSON{Title: "No Such Article", Status: http.StatusNotFound, Detail: fmt.Sprintf("Article %s does not exist", articleID)}
+			}
 
-		vars := articleVariables{
-			Title:       article.Title,
-			Description: article.Description,
-			Site:        config,
-			HTML:        article.HTML,
-		}
-		content.mutex.RUnlock()
-		//NOTE: critical section end
+			if article.Problem != nil {
+				return article.Problem
+			}
 
-		// This was done to avoid returning in the middle of the mutex
+			vars = articleVariables{
+				Title:       article.Title,
+				Description: article.Description,
+				Site:        config,
+				HTML:        article.HTML,
+			}
+
+			return nil
+		}()
+
 		if problem != nil {
 			return problem
 		}
