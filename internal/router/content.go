@@ -71,7 +71,7 @@ func (a *Article) SetTimestamps(created string, updated string) {
 }
 
 // ArticlesCtx is middleware for a router to provide a clean path to an article
-// for an HTTPHandler
+// for an HTTPHandler.
 func ArticlesCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		articleID := "/"+filepath.Clean(chi.URLParam(r, "*"))
@@ -133,7 +133,7 @@ func GetArticle(tmpl *template.Template, config Config, content *Content) func(w
 }
 
 // GenerateArticles walks a directory, and generates articles from
-// subdirectories and markdown files found
+// subdirectories and markdown files found.
 func GenerateArticles(contentPath string) (map[string]*Article, error) {
 	articles := make(map[string]*Article)
 
@@ -195,30 +195,31 @@ func GenerateArticles(contentPath string) (map[string]*Article, error) {
 	return articles, nil
 }
 
-// ScanContent scans for articles for a given configuration
-func ScanContent(contentPath string, scanInterval int) *Content {
+// ScanContent scans for articles every scanInterval seconds.
+func ScanContent(contentPath string, scanInterval int, done chan bool, wg sync.WaitGroup) *Content {
 	content := &Content{}
 
 	go func() {
 		for {
 			log.Print("🔍 scanning content")
-			//NOTE: critical section begin
-			content.mutex.Lock()
-			articles, err := GenerateArticles(contentPath)
-			if err != nil {
-				log.Print(err.Error())
-			} else {
-				content.Articles = articles
-			}
-			for _, article := range articles {
-				if article.Problem == nil {
-					log.Printf("✅ %s\n", article.Route)
+			func () {
+				content.mutex.Lock()
+				defer content.mutex.Unlock()
+
+				articles, err := GenerateArticles(contentPath)
+				if err != nil {
+					log.Print(err.Error())
 				} else {
-					log.Printf("❌ %s: %s\n", article.Route, article.Problem.Detail)
+					content.Articles = articles
 				}
-			}
-			content.mutex.Unlock()
-			//NOTE: critical section end
+				for _, article := range articles {
+					if article.Problem == nil {
+						log.Printf("✅ %s\n", article.Route)
+					} else {
+						log.Printf("❌ %s: %s\n", article.Route, article.Problem.Detail)
+					}
+				}
+			}()
 			time.Sleep(time.Duration(scanInterval) * time.Second)
 		}
 	}()
