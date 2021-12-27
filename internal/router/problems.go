@@ -18,6 +18,8 @@ type problemVariables struct {
 
 const problemsCtxKey = "problemID"
 
+// ProblemsCtx is a middleware that extracts the problem ID
+// from the URL of the HTTP request.
 func ProblemsCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		problemID := chi.URLParam(r, problemsCtxKey)
@@ -26,8 +28,8 @@ func ProblemsCtx(next http.Handler) http.Handler {
 	})
 }
 
-// GetProblem returns an HTTP handler that responds to a request with a document
-// describing a particular problem
+// GetProblem is a request handler that returns an HTTP handler that responds
+// to a request with a document describing a particular problem.
 func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		problemID := r.Context().Value(problemsCtxKey).(string)
