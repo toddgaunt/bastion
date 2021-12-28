@@ -109,7 +109,7 @@ func IntervalScan(contentPath string, scanInterval int, done chan bool, wg sync.
 						}
 					}
 				}()
-				time.Sleep(time.Duration(scanInterval) * time.Second)
+				time.Sleep(time.Duration(scanInterval) * time.Minute)
 			}
 		}
 		wg.Done()

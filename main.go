@@ -24,6 +24,11 @@ func isFlagPassed(name string) bool {
 }
 
 func Serve(prefixDir string, config Config) {
+	// default ScanInterval
+	if config.Router.ScanInterval < 1 {
+		config.Router.ScanInterval = 5
+	}
+
 	r, err := router.New(prefixDir, config.Router)
 	if err != nil {
 		log.Fatalf("couldn't create router: %v", err)
