@@ -39,8 +39,8 @@ var DefaultConfig = Config{
 // optional TLS certificate and key to serve HTTPS.
 type ConfigNetwork struct {
 	Port    int    `json:"port"`
-	TLSCert string `json:"tls_cert"`
-	TLSKey  string `json:"tls_key"`
+	TLSCert string `json:"tls-cert"`
+	TLSKey  string `json:"tls-key"`
 }
 
 // Config contains all website configuration options for a Monastery website
