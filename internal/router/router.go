@@ -10,6 +10,18 @@ import (
 	"github.com/go-chi/chi"
 )
 
+// Config contains all configuration for a Monastery website's index, article,
+// and problem pages. Some options are: website title, css style, and which
+// articles are pinned to the navigation bar rather than indexed.
+type Config struct {
+	Name         string            `json:"name"`
+	Description  string            `json:"description"`
+	Style        string            `json:"style"`
+	Pinned       map[string]string `json:"pinned"`
+	ScanInterval int
+}
+
+// New creates a new router for a bastion website.
 func New(prefixDir string, config Config) (chi.Router, error) {
 	r := chi.NewRouter()
 
