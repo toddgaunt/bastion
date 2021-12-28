@@ -5,20 +5,22 @@ import (
 	"html/template"
 	"net/http"
 	"sort"
+
+	"bastionburrow.com/bastion/internal/content"
 )
 
 type indexVariables struct {
 	Title       string
 	Description string
 	Site        Config
-	Content     *Content
+	Content     *content.Content
 }
 
-func (vars indexVariables) SortedIndex() []*Article {
-	var sorted []*Article
+func (vars indexVariables) SortedIndex() []*content.Article {
+	var sorted []*content.Article
 
 	//NOTE: critical section begin
-	vars.Content.mutex.RLock()
+	vars.Content.Mutex.RLock()
 	// Created a list of nested articles sorted by date
 	for _, v := range vars.Content.Articles {
 		// Only add unpinned articles to the index
@@ -26,7 +28,7 @@ func (vars indexVariables) SortedIndex() []*Article {
 			sorted = append(sorted, v)
 		}
 	}
-	vars.Content.mutex.RUnlock()
+	vars.Content.Mutex.RUnlock()
 	//NOTE: critical section end
 
 	sort.Slice(sorted, func(i int, j int) bool {
@@ -42,7 +44,7 @@ func (vars indexVariables) SortedIndex() []*Article {
 
 // GetIndex returns an HTTP handler that responds to requests with the
 // Monastery site index
-func GetIndex(tmpl *template.Template, config Config, content *Content) func(w http.ResponseWriter, r *http.Request) {
+func GetIndex(tmpl *template.Template, config Config, content *content.Content) func(w http.ResponseWriter, r *http.Request) {
 	// Actions to perform for every request
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		vars := indexVariables{
@@ -54,9 +56,9 @@ func GetIndex(tmpl *template.Template, config Config, content *Content) func(w h
 
 		buf := &bytes.Buffer{}
 
-		content.mutex.RLock()
+		content.Mutex.RLock()
 		tmpl.Execute(buf, vars)
-		content.mutex.RUnlock()
+		content.Mutex.RUnlock()
 
 		w.Header().Add("Content-Type", "text/html")
 		w.Write(buf.Bytes())

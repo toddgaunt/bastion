@@ -4,7 +4,9 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"sync"
 
+	"bastionburrow.com/bastion/internal/content"
 	"github.com/go-chi/chi"
 )
 
@@ -24,8 +26,11 @@ func New(prefixDir string, config Config) (chi.Router, error) {
 		return nil, fmt.Errorf("couldn't load problem template: %w", err)
 	}
 
+	var done chan bool
+	var wg sync.WaitGroup
+
 	staticFileServer := http.FileServer(http.Dir(prefixDir + "/static"))
-	content := ScanContent(prefixDir+"/content", config.ScanInterval)
+	content := content.IntervalScan(prefixDir+"/content", config.ScanInterval, done, wg)
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetIndex(indexTemplate, config, content))
@@ -40,6 +45,10 @@ func New(prefixDir string, config Config) (chi.Router, error) {
 	})
 
 	r.Handle("/.static/*", http.StripPrefix("/.static/", staticFileServer))
+
+	// Closing this channel signals all worker threads to stop and cleanup.
+	//close(done)
+	//wg.Wait()
 
 	return r, nil
 }

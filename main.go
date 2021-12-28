@@ -23,6 +23,24 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
+func Serve(prefixDir string, config Config) {
+	r, err := router.New(prefixDir, config.Router)
+	if err != nil {
+		log.Fatalf("couldn't create router: %v", err)
+	}
+
+	addr := fmt.Sprintf(":%d", config.Network.Port)
+
+	if config.Network.TLSCert != "" && config.Network.TLSKey != "" {
+		// TLS can be used
+		log.Fatal(http.ListenAndServeTLS(addr, config.Network.TLSCert, config.Network.TLSKey, r))
+	} else {
+		log.Print("Warning: not using TLS")
+		// Allow non-TLS for use until a certificate can be acquired
+		log.Fatal(http.ListenAndServe(addr, r))
+	}
+}
+
 func main() {
 	var port int
 	var tlsCert string
@@ -39,7 +57,7 @@ func main() {
 	if defaultConfig {
 		bytes, err := json.MarshalIndent(DefaultConfig, "", "    ")
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalln(err)
 		}
 		fmt.Println(string(bytes))
 		os.Exit(0)
@@ -78,18 +96,5 @@ func main() {
 	})
 
 	// Start the server
-	r, err := router.New(prefixDir, config.Router)
-	if err != nil {
-		log.Fatalf("couldn't create router: %v", err)
-	}
-
-	addr := fmt.Sprintf(":%d", config.Network.Port)
-
-	if config.Network.TLSCert != "" && config.Network.TLSKey != "" {
-		// TLS can be used
-		log.Fatal(http.ListenAndServeTLS(addr, tlsCert, tlsKey, r))
-	} else {
-		// Allow non-TLS for use until a certificate can be acquired
-		log.Fatal(http.ListenAndServe(addr, r))
-	}
+	Serve(prefixDir, config)
 }
