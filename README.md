@@ -1,7 +1,7 @@
 # Bastion
 Bastion is a simple webserver for serving articles written in markdown. These markdown
 articles are converted to html automatically as they are updated, and have a special
-header section to specify useful metadata about the article used by Bastion.
+header section to specify useful metadata about the article to Bastion.
 
 ## Website layout
 ```
