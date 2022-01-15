@@ -8,8 +8,8 @@ header section to specify useful metadata about the article used by Bastion.
 www.example.com/
     config.json
     content/
-        article1.md
-        article2.md
+        about.md
+        contact.md
     static/
         default.css
     templates/
