@@ -12,8 +12,7 @@ log() {
 }
 
 log-warn() {
-echo "[$me] 🟡 $@"
-    warn=
+    echo "[$me] 🟡 $@"
 }
 
 log-fatal() {
@@ -39,7 +38,7 @@ require() {
 
 build() {
     log "🔨 building…"
-	go build $basepath
+    go build $basepath
 }
 
 clean() {
@@ -87,7 +86,6 @@ main() {
             ;;
     esac
 }
-
 
 require \
     go \
