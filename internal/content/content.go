@@ -13,14 +13,14 @@ type Content struct {
 }
 
 type Article struct {
-	Route       string
+	Path        string
 	Title       string
 	Description string
 	Author      string
 	Created     time.Time
 	Updated     time.Time
 
-	HTML    template.HTML
+	HTML  template.HTML
 	Error error
 }
 

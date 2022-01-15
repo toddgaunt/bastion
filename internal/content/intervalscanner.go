@@ -37,7 +37,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			return nil
 		}
 
-		article := &Article{Route: articleID}
+		article := &Article{Path: articleID}
 
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
@@ -78,37 +78,41 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 	return articles, nil
 }
 
-// IntervalScan scans for articles every scanInterval seconds.
+// scanContent updates the content based on whats found in the directory at
+// contentPath.
+func scanContent(content *Content, contentPath string) {
+	content.Mutex.Lock()
+	defer content.Mutex.Unlock()
+
+	articles, err := generateArticles(contentPath)
+	if err != nil {
+		log.Print(err.Error())
+	} else {
+		content.Articles = articles
+	}
+	for _, article := range articles {
+		if article.Error == nil {
+			log.Printf("✅ %s\n", article.Path)
+		} else {
+			log.Printf("❌ %s: %s\n", article.Path, article.Error.Error())
+		}
+	}
+}
+
+// IntervalScan scans for content every scanInterval seconds.
 func IntervalScan(contentPath string, scanInterval int, done chan bool, wg sync.WaitGroup) *Content {
 	content := &Content{}
 
 	wg.Add(1)
 	go func() {
-		loop:
+	loop:
 		for {
 			select {
 			case <-done:
 				break loop
 			default:
 				log.Print("🔍 scanning content")
-				func() {
-					content.Mutex.Lock()
-					defer content.Mutex.Unlock()
-
-					articles, err := generateArticles(contentPath)
-					if err != nil {
-						log.Print(err.Error())
-					} else {
-						content.Articles = articles
-					}
-					for _, article := range articles {
-						if article.Error == nil {
-							log.Printf("✅ %s\n", article.Route)
-						} else {
-							log.Printf("❌ %s: %s\n", article.Route, article.Error.Error())
-						}
-					}
-				}()
+				scanContent(content, contentPath)
 				time.Sleep(time.Duration(scanInterval) * time.Minute)
 			}
 		}
