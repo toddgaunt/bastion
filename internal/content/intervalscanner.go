@@ -2,7 +2,6 @@ package content
 
 import (
 	"fmt"
-	"html/template"
 	"io/ioutil"
 	"log"
 	"os"
@@ -47,13 +46,14 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			}
 		}()
 
-		data, err := ioutil.ReadFile(articlePath)
+		bytes, err := ioutil.ReadFile(articlePath)
 		if err != nil {
 			article.Error = fmt.Errorf("Article '%s' could not be read from the filesystem", articleID)
 			return nil
 		}
+		article.Bytes = bytes
 
-		doc, err := document.Parse(data)
+		doc, err := document.Parse(bytes)
 		if err != nil {
 			article.Error = err
 			return nil
@@ -64,13 +64,12 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 		article.Author = doc.Properties.Value("Author")
 		article.SetTimestamps(doc.Properties.Value("Created"), doc.Properties.Value("Updated"))
 
-		bytes, err := doc.GenerateHTML()
+		html, err := doc.GenerateHTML()
 		if err != nil {
 			article.Error = err
 			return nil
 		}
-
-		article.HTML = template.HTML(bytes)
+		article.HTML = html
 
 		return nil
 	})
