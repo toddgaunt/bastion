@@ -37,7 +37,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			return nil
 		}
 
-		article := &Article{Path: articleID}
+		article := &Article{Route: articleID}
 
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
@@ -92,9 +92,9 @@ func scanContent(content *Content, contentPath string) {
 	}
 	for _, article := range articles {
 		if article.Error == nil {
-			log.Printf("✅ %s\n", article.Path)
+			log.Printf("✅ %s\n", article.Route)
 		} else {
-			log.Printf("❌ %s: %s\n", article.Path, article.Error.Error())
+			log.Printf("❌ %s: %s\n", article.Route, article.Error.Error())
 		}
 	}
 }

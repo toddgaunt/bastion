@@ -13,7 +13,7 @@ type Content struct {
 }
 
 type Article struct {
-	Path        string
+	Route       string
 	Title       string
 	Description string
 	Author      string
