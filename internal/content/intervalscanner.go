@@ -51,7 +51,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			article.Error = fmt.Errorf("Article '%s' could not be read from the filesystem", articleID)
 			return nil
 		}
-		article.Bytes = bytes
+		article.Markdown = string(bytes)
 
 		doc, err := document.Parse(bytes)
 		if err != nil {

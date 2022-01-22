@@ -5,9 +5,9 @@ import (
 	"context"
 	"fmt"
 	"html/template"
-	"log"
 	"net/http"
 	"path/filepath"
+	"strings"
 
 	"bastionburrow.com/bastion/internal/content"
 	"github.com/go-chi/chi"
@@ -39,25 +39,26 @@ func ArticlesCtx(next http.Handler) http.Handler {
 func GetArticle(tmpl *template.Template, config Config, content *content.Content) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
 		articleID := r.Context().Value(articlesCtxKey).(string)
-		log.Print(articleID)
 
 		// The critical section is wrapped within a closure so defer can be
 		// used for the mutex operations.
+		var markdown string
 		var vars articleVariables
-		var problem = func() *ProblemJSON {
+		var getArticle = func(articleKey string) *ProblemJSON {
 			content.Mutex.RLock()
 			defer content.Mutex.RUnlock()
 
-			article, ok := content.Articles[articleID]
+			article, ok := content.Articles[articleKey]
 
 			if !ok {
-				return &ProblemJSON{Title: "No Such Article", Status: http.StatusNotFound, Detail: fmt.Sprintf("Article %s does not exist", articleID)}
+				return &ProblemJSON{Title: "No Such Article", Status: http.StatusNotFound, Detail: fmt.Sprintf("Article %s does not exist", articleKey)}
 			}
 
 			if article.Error != nil {
 				return &ProblemJSON{Title: "Article Generation Error", Status: http.StatusNotImplemented, Detail: article.Error.Error()}
 			}
 
+			markdown = article.Markdown
 			vars = articleVariables{
 				Title:       article.Title,
 				Description: article.Description,
@@ -66,17 +67,26 @@ func GetArticle(tmpl *template.Template, config Config, content *content.Content
 			}
 
 			return nil
-		}()
-
-		if problem != nil {
-			return problem
 		}
 
-		buf := &bytes.Buffer{}
-		tmpl.Execute(buf, vars)
+		if strings.HasSuffix(articleID, ".md") {
+			problem := getArticle(strings.TrimSuffix(articleID, ".md"))
+			if problem != nil {
+				return problem
+			}
+			w.Header().Add("Content-Type", "text")
+			w.Write([]byte(markdown))
+		} else {
+			problem := getArticle(articleID)
+			if problem != nil {
+				return problem
+			}
+			buf := &bytes.Buffer{}
+			tmpl.Execute(buf, vars)
 
-		w.Header().Add("Content-Type", "text/html")
-		w.Write(buf.Bytes())
+			w.Header().Add("Content-Type", "text/html")
+			w.Write(buf.Bytes())
+		}
 
 		return nil
 	}

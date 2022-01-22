@@ -20,8 +20,9 @@ type Article struct {
 	Created     time.Time
 	Updated     time.Time
 
-	HTML  template.HTML
-	Error error
+	HTML     template.HTML
+	Markdown string
+	Error    error
 }
 
 func (article Article) FormattedDate() string {
