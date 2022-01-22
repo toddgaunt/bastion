@@ -52,7 +52,7 @@ func Parse(data []byte) (Document, error) {
 }
 
 // GenerateHTML generates HTML from a given document
-func (doc *Document) GenerateHTML() ([]byte, error) {
+func (doc *Document) GenerateHTML() (template.HTML, error) {
 	type variables struct {
 		Title       string
 		Author      string
@@ -73,14 +73,15 @@ func (doc *Document) GenerateHTML() ([]byte, error) {
 	switch strings.ToLower(doc.Format) {
 	case "text":
 		// An HTML template ensures the text content doesn't escape <pre> tags
-		textTemplate.Execute(buf, string(doc.Content))
+		if err := textTemplate.Execute(buf, string(doc.Content)); err != nil {
+			return "", err
+		}
 	case "html":
-		buf.Write(doc.Content)
-		buf.WriteString(footerHTML)
+		_, _ = buf.Write(doc.Content)
 	case "markdown":
-		buf.Write(markdown.ToHTML(doc.Content, nil, nil))
+		_, _ = buf.Write(markdown.ToHTML(doc.Content, nil, nil))
 	}
 	buf.WriteString(footerHTML)
 
-	return []byte(buf.String()), nil
+	return template.HTML(buf.String()), nil
 }
