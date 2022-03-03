@@ -1,10 +1,16 @@
 #!/usr/bin/env bash
 
+# Allow execution from anywhere to behave as if executed within the directory
+# this script resides inside of.
+basepath=$(dirname $(realpath $0))
+cd $basepath
+
 # Set much more strict behavior for failed commands and unexpanded variables
 set -eu
 
+# Allow's the script to refer to itself
 me=$(basename $0)
-basepath=$(dirname $(realpath $0))
+
 package=bastion.tar.gz
 
 log() {
@@ -62,6 +68,7 @@ usage() {
 main() {
     subcommand=${1-all}
     args=${@:2}
+
     case $subcommand in
         build)
             build $args
