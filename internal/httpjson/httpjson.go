@@ -11,7 +11,7 @@ import (
 )
 
 const (
-	contentTypeHeader  = "ontent-Type"
+	contentTypeHeader  = "Content-Type"
 	contentTypeJSON    = "application/json"
 	contentTypeProblem = "application/problem+json"
 )
