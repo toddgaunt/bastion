@@ -55,7 +55,7 @@ func main() {
 	flag.IntVar(&port, "port", 0, "Specify a port to serve and listen to")
 	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS Certificate for HTTPS")
 	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS Key for HTTPS")
-	flag.BoolVar(&defaultConfig, "default-config", false, "Output default configuration")
+	flag.BoolVar(&defaultConfig, "example-config", false, "Output default configuration")
 
 	flag.Parse()
 
@@ -79,13 +79,11 @@ func main() {
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	var config Config
 	if err != nil {
-		log.Print("using default configuration")
-		config = DefaultConfig
-	} else {
-		err := json.Unmarshal(data, &config)
-		if err != nil {
-			log.Fatalf("couldn't load config: %v", err)
-		}
+		log.Fatalf("couldn't load config: %v", err)
+	}
+
+	if err := json.Unmarshal(data, &config); err != nil {
+		log.Fatalf("couldn't load config: %v", err)
 	}
 
 	// Only flags that are explicitly provided from commandline can be visited
