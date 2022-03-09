@@ -112,7 +112,7 @@ func IntervalScan(contentPath string, scanInterval int, done chan bool, wg sync.
 			default:
 				log.Print("🔍 scanning content")
 				scanContent(content, contentPath)
-				time.Sleep(time.Duration(scanInterval) * time.Minute)
+				time.Sleep(time.Duration(scanInterval) * time.Second)
 			}
 		}
 		wg.Done()
