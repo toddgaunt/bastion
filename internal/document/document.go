@@ -10,14 +10,14 @@ import (
 )
 
 const headerHTML = `<article>
-<hr>
-{{if .Title}}<h1 id="article-title">{{.Title}}</h1>
-{{end}}{{if .Description}}<p id="article-description">{{.Description}}</p>
-{{end}}<hr>
-`
+<div class="article-header">
+{{if .Title}}<h1 class="article-title">{{.Title}}</h1>
+{{end}}{{if .Description}}<p class="article-description">{{.Description}}</p>
+{{end}}</div>
+<div class="article-body">`
 
-const footerHTML = `</article>
-`
+const footerHTML = `</div>
+</article>`
 
 var headerTemplate = template.Must(template.New("header").Parse(headerHTML))
 var textTemplate = template.Must(template.New("text").Parse(`<pre>{{.}}</pre>`))
