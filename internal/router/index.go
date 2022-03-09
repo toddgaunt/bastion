@@ -7,6 +7,7 @@ import (
 	"sort"
 
 	"bastionburrow.com/bastion/internal/content"
+	"bastionburrow.com/bastion/internal/httpjson"
 )
 
 type indexVariables struct {
@@ -46,7 +47,7 @@ func (vars indexVariables) SortedIndex() []*content.Article {
 // Monastery site index
 func GetIndex(tmpl *template.Template, config Config, content *content.Content) func(w http.ResponseWriter, r *http.Request) {
 	// Actions to perform for every request
-	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
+	f := func(w http.ResponseWriter, r *http.Request) *httpjson.Problem {
 		vars := indexVariables{
 			Title:       config.Name,
 			Description: config.Description,

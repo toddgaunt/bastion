@@ -6,9 +6,59 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"net/url"
+	"strings"
 
+	"bastionburrow.com/bastion/internal/httpjson"
 	"github.com/go-chi/chi"
 )
+
+const ProblemPath = ".problems"
+
+// ProblemHandler wraps an HTTP handler that returns a httpjson.Problem as a standard
+// HTTP handler that returns nothing. This allows for proper error propogation
+// while being compatible with the standard HTTP handler API
+func ProblemHandler(
+	handlerFunc func(w http.ResponseWriter, r *http.Request) *httpjson.Problem,
+) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		var problem = handlerFunc(w, r)
+		if problem == nil {
+			return
+		}
+
+		// Fill in values that we left unfilled
+		if problem.Status == 0 {
+			problem.Status = http.StatusInternalServerError
+		}
+
+		if problem.Title == "" {
+			problem.Title = http.StatusText(problem.Status)
+		}
+
+		if problem.Type == "" {
+			urlTitle := problem.Title
+			urlTitle = strings.ReplaceAll(urlTitle, " ", "-")
+			urlTitle = strings.ToLower(urlTitle)
+			urlTitle = url.PathEscape(urlTitle)
+
+			var scheme = "https"
+			if r.TLS == nil {
+				scheme = "http"
+			}
+
+			problem.Type = fmt.Sprintf(
+				"%s://%s/%s/%s",
+				scheme,
+				r.Host,
+				ProblemPath,
+				urlTitle,
+			)
+		}
+
+		httpjson.WriteProblem(w, *problem)
+	}
+}
 
 type problemVariables struct {
 	Title       string
@@ -31,7 +81,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 // GetProblem is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
 func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWriter, r *http.Request) {
-	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
+	f := func(w http.ResponseWriter, r *http.Request) *httpjson.Problem {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
 		description := ""
@@ -44,7 +94,7 @@ func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWrit
 		case "internal-server-error":
 			description = `The server experienced an error which was no fault of the client`
 		default:
-			return &ProblemJSON{Status: http.StatusNotFound, Detail: fmt.Sprintf("Explanation for %s does not exist", problemID)}
+			return &httpjson.Problem{Status: http.StatusNotFound, Detail: fmt.Sprintf("Explanation for %s does not exist", problemID)}
 		}
 
 		vars := problemVariables{

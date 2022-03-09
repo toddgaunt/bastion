@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"bastionburrow.com/bastion/internal/content"
+	"bastionburrow.com/bastion/internal/httpjson"
 	"github.com/go-chi/chi"
 )
 
@@ -37,25 +38,33 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
 func GetArticle(tmpl *template.Template, config Config, content *content.Content) func(w http.ResponseWriter, r *http.Request) {
-	f := func(w http.ResponseWriter, r *http.Request) *ProblemJSON {
+	f := func(w http.ResponseWriter, r *http.Request) *httpjson.Problem {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
 		// The critical section is wrapped within a closure so defer can be
 		// used for the mutex operations.
 		var markdown string
 		var vars articleVariables
-		var getArticle = func(articleKey string) *ProblemJSON {
+		var getArticle = func(articleKey string) *httpjson.Problem {
 			content.Mutex.RLock()
 			defer content.Mutex.RUnlock()
 
 			article, ok := content.Articles[articleKey]
 
 			if !ok {
-				return &ProblemJSON{Title: "No Such Article", Status: http.StatusNotFound, Detail: fmt.Sprintf("Article %s does not exist", articleKey)}
+				return &httpjson.Problem{
+					Title:  "No Such Article",
+					Status: http.StatusNotFound,
+					Detail: fmt.Sprintf("Article %s does not exist", articleKey),
+				}
 			}
 
 			if article.Error != nil {
-				return &ProblemJSON{Title: "Article Generation Error", Status: http.StatusNotImplemented, Detail: article.Error.Error()}
+				return &httpjson.Problem{
+					Title:  "Article Generation Error",
+					Status: http.StatusNotImplemented,
+					Detail: article.Error.Error(),
+				}
 			}
 
 			markdown = article.Markdown

@@ -7,7 +7,6 @@ package httpjson
 import (
 	"encoding/json"
 	"net/http"
-	"net/url"
 )
 
 const (
@@ -25,14 +24,15 @@ type Response struct {
 
 // Problem represents server errors in JSON, defined by IETF RFC 7807.
 type Problem struct {
-	Type     url.URL `json:"type"`
-	Title    string  `json:"title"`
-	Status   int     `json:"status"`
-	Detail   string  `json:"detail,omitempty"`
-	Instance string  `json:"instance,omitempty"`
+	Type     string `json:"type"`
+	Title    string `json:"title"`
+	Status   int    `json:"status"`
+	Detail   string `json:"detail,omitempty"`
+	Instance string `json:"instance,omitempty"`
 }
 
-func writeProblem(w http.ResponseWriter, problem Problem) {
+// WriteProblem writes a Problem as an http response.
+func WriteProblem(w http.ResponseWriter, problem Problem) {
 	// Fill in values that we left unfilled
 	if problem.Status == 0 {
 		problem.Status = http.StatusInternalServerError
@@ -49,32 +49,36 @@ func writeProblem(w http.ResponseWriter, problem Problem) {
 }
 
 // HandlerFunc wraps an HTTP handler that returns a Response and a Problem as a
-// standard http.HandlerFunc that returns nothing. This allows for more
-// familiar error returns within JSON based HTTP handlers while allowing these
-// handlers to be compatible with functions that expect a standard
-// http.HandlerFunc.
+// standard http.HandlerFunc that returns nothing. This allows for values to be
+// returned to be written rather than writing the response procedurally while
+// still being compatible with functions that expect a standard
+// http.HandlerFunc. The response's content type is set to "application/json"
+// if no Content-Type header was set in the Response.
 func HandlerFunc(
 	jsonHandler func(r *http.Request) (*Response, *Problem),
 ) func(w http.ResponseWriter, r *http.Request) {
 	var wrapped = func(w http.ResponseWriter, r *http.Request) {
 		var response, problem = jsonHandler(r)
 		if response == nil && problem == nil {
-			writeProblem(w, Problem{})
+			WriteProblem(w, Problem{})
 		}
 		if problem != nil {
-			writeProblem(w, *problem)
+			WriteProblem(w, *problem)
 		}
 
 		var body, err = json.Marshal(response.Object)
 		if err != nil {
-			writeProblem(w, Problem{})
+			WriteProblem(w, Problem{})
 		}
 		var header = w.Header()
-		header.Add(contentTypeHeader, contentTypeJSON)
 		for key, values := range response.Header {
 			for _, val := range values {
 				header.Add(key, val)
 			}
+		}
+		// Set Content-Type to JSON only if there wasn't one provided by the caller.
+		if header.Get(contentTypeHeader) == "" {
+			header.Add(contentTypeHeader, contentTypeJSON)
 		}
 		w.WriteHeader(response.Status)
 		w.Write(body)
