@@ -60,7 +60,7 @@ func main() {
 	flag.Parse()
 
 	if defaultConfig {
-		bytes, err := json.MarshalIndent(DefaultConfig, "", "    ")
+		bytes, err := json.MarshalIndent(DefaultConfig, "", "\t")
 		if err != nil {
 			log.Fatalln(err)
 		}
