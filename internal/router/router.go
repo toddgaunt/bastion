@@ -1,7 +1,6 @@
 package router
 
 import (
-	"fmt"
 	"html/template"
 	"net/http"
 	"sync"
@@ -18,25 +17,91 @@ type Config struct {
 	Description  string            `json:"description"`
 	Style        string            `json:"style"`
 	Pinned       map[string]string `json:"pinned"`
-	ScanInterval int
+	ScanInterval int               `json:"scan_interval"`
 }
+
+const indexTemplateString = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div id="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Site.Pinned}}
+			<a href="/{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div id="content">
+			<article>
+				<hr>
+				<h1 id="article-title">{{.Site.Name}}</h1>
+				<p id="article-description">{{.Site.Description}}</p>
+				<hr>
+				<ul>
+					{{range $k, $v := .SortedIndex}}
+					<li><a href="{{$v.Route}}">{{$v.FormattedDate}} - {{$v.Title}}</a></li>
+					{{end}}
+				</ul>
+			</article>
+		</div>
+	</body>
+</html>`
+
+const articleTemplateString = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div id="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Site.Pinned}}
+			<a href="/{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div id="content">
+			{{.HTML}}
+		</div>
+	</body>
+</html>`
+
+const problemTemplateString = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div id="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Site.Pinned}}
+			<a href="/{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div id="content">
+			<article>
+				<hr>
+				<h1 id="problem-title">{{.Title}}</h1>
+				<hr>
+				<p>{{.Description}}</p>
+			</article>
+		</div>
+	</body>
+</html>`
 
 // New creates a new router for a bastion website.
 func New(prefixDir string, config Config) (chi.Router, error) {
 	r := chi.NewRouter()
 
-	indexTemplate, err := template.ParseFiles(prefixDir + "/templates/index.html")
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load index template: %w", err)
-	}
-	articleTemplate, err := template.ParseFiles(prefixDir + "/templates/article.html")
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load article template: %w", err)
-	}
-	problemTemplate, err := template.ParseFiles(prefixDir + "/templates/problem.html")
-	if err != nil {
-		return nil, fmt.Errorf("couldn't load problem template: %w", err)
-	}
+	indexTemplate := template.Must(template.New("index").Parse(indexTemplateString))
+	articleTemplate := template.Must(template.New("article").Parse(articleTemplateString))
+	problemTemplate := template.Must(template.New("problem").Parse(problemTemplateString))
 
 	var done chan bool
 	var wg sync.WaitGroup
