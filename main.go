@@ -29,7 +29,7 @@ func Serve(prefixDir string, config Config) {
 		config.Router.ScanInterval = 5
 	}
 
-	r, err := router.New(prefixDir, config.Router)
+	r, err := router.New(path.Clean(prefixDir), config.Router)
 	if err != nil {
 		log.Fatalf("couldn't create router: %v", err)
 	}
@@ -68,11 +68,11 @@ func main() {
 		os.Exit(0)
 	}
 
-	prefixDir := path.Clean(".")
+	prefixDir := "."
 
 	args := flag.Args()
 	if len(args) >= 1 {
-		prefixDir = path.Clean(args[0])
+		prefixDir = args[0]
 	}
 
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
