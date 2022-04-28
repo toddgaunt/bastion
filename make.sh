@@ -76,7 +76,6 @@ main() {
 
 	case $subcommand in
 		all)
-			clean
 			build
 			package
 			;;
