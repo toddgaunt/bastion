@@ -50,16 +50,16 @@ func main() {
 	var port int
 	var tlsCert string
 	var tlsKey string
-	var defaultConfig bool
+	var exampleConfig bool
 
-	flag.IntVar(&port, "port", 0, "Specify a port to serve and listen to")
-	flag.StringVar(&tlsCert, "tls-cert", "", "Path to TLS Certificate for HTTPS")
-	flag.StringVar(&tlsKey, "tls-key", "", "Path to TLS Key for HTTPS")
-	flag.BoolVar(&defaultConfig, "example-config", false, "Output default configuration")
+	flag.IntVar(&port, "port", 0, "Specify a port to serve and listen on")
+	flag.StringVar(&tlsCert, "tls-cert", "", "Path to server TLS Certificate for HTTPS")
+	flag.StringVar(&tlsKey, "tls-key", "", "Path to server TLS Key for HTTPS")
+	flag.BoolVar(&exampleConfig, "example-config", false, "Output an example config.json")
 
 	flag.Parse()
 
-	if defaultConfig {
+	if exampleConfig {
 		bytes, err := json.MarshalIndent(DefaultConfig, "", "\t")
 		if err != nil {
 			log.Fatalln(err)
@@ -75,7 +75,6 @@ func main() {
 		prefixDir = path.Clean(args[0])
 	}
 
-	// Load config if present, or use default config
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	var config Config
 	if err != nil {
