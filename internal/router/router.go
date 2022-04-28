@@ -60,13 +60,13 @@ const articleTemplateString = `<!DOCTYPE html>
 		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
 	</head>
 	<body>
-		<div id="site-navigation">
+		<div class="site-navigation">
 			<a href="/">{{.Site.Name}}</a>
 			{{range $name, $route := .Site.Pinned}}
 			<a href="/{{$route}}">{{$name}}</a>
 			{{end}}
 		</div>
-		<div id="content">
+		<div class="content">
 			{{.HTML}}
 		</div>
 	</body>
@@ -80,18 +80,22 @@ const problemTemplateString = `<!DOCTYPE html>
 		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
 	</head>
 	<body>
-		<div id="site-navigation">
+		<div class="site-navigation">
 			<a href="/">{{.Site.Name}}</a>
 			{{range $name, $route := .Site.Pinned}}
 			<a href="/{{$route}}">{{$name}}</a>
 			{{end}}
 		</div>
-		<div id="content">
+		<div class="content">
 			<article>
-				<hr>
-				<h1 id="problem-title">{{.Title}}</h1>
-				<hr>
-				<p>{{.Description}}</p>
+				<div class="problem-header">
+					<hr>
+					<h1 class="problem-title">{{.Title}}</h1>
+					<hr>
+				</div>
+				<div class="problem-body">
+					<p>{{.Description}}</p>
+				</div>
 			</article>
 		</div>
 	</body>

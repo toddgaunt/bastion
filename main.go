@@ -68,7 +68,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	prefixDir := "."
+	prefixDir := path.Clean(".")
 
 	args := flag.Args()
 	if len(args) >= 1 {

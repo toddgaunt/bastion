@@ -20,8 +20,8 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 	articles := make(map[string]*Article)
 
 	filepath.Walk(contentPath, func(articlePath string, info os.FileInfo, err error) error {
-		articleID := articlePath[len(contentPath) : len(articlePath)-len(path.Ext(articlePath))]
 		articleName := path.Base(articlePath)
+		articleRoute := strings.TrimPrefix(strings.TrimSuffix(articlePath, path.Ext(articlePath)), path.Clean(contentPath))
 
 		if strings.HasPrefix(articleName, ".") {
 			// Skip "hidden" files and directories, since '.' is reserved for built-in routes
@@ -36,19 +36,19 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			return nil
 		}
 
-		article := &Article{Route: articleID}
+		article := &Article{Route: articleRoute}
 
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
 		defer func() {
 			if article.Error != nil || article.HTML != "" {
-				articles[articleID] = article
+				articles[articleRoute] = article
 			}
 		}()
 
 		bytes, err := ioutil.ReadFile(articlePath)
 		if err != nil {
-			article.Error = fmt.Errorf("Article '%s' could not be read from the filesystem", articleID)
+			article.Error = fmt.Errorf("Article '%s' could not be read from the filesystem", articleRoute)
 			return nil
 		}
 		article.Markdown = string(bytes)
