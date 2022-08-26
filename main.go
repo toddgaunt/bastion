@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path"
 
 	"bastionburrow.com/bastion/internal/router"
 )
@@ -29,7 +28,7 @@ func Serve(prefixDir string, config Config) {
 		config.Router.ScanInterval = 5
 	}
 
-	r, err := router.New(path.Clean(prefixDir), config.Router)
+	r, err := router.New(prefixDir, config.Router)
 	if err != nil {
 		log.Fatalf("couldn't create router: %v", err)
 	}

@@ -3,6 +3,7 @@ package router
 import (
 	"html/template"
 	"net/http"
+	"path"
 	"sync"
 
 	"bastionburrow.com/bastion/internal/content"
@@ -101,19 +102,22 @@ const problemTemplateString = `<!DOCTYPE html>
 	</body>
 </html>`
 
+var (
+	indexTemplate   = template.Must(template.New("index").Parse(indexTemplateString))
+	articleTemplate = template.Must(template.New("article").Parse(articleTemplateString))
+	problemTemplate = template.Must(template.New("problem").Parse(problemTemplateString))
+)
+
 // New creates a new router for a bastion website.
 func New(prefixDir string, config Config) (chi.Router, error) {
+	dir := path.Clean(prefixDir)
 	r := chi.NewRouter()
-
-	indexTemplate := template.Must(template.New("index").Parse(indexTemplateString))
-	articleTemplate := template.Must(template.New("article").Parse(articleTemplateString))
-	problemTemplate := template.Must(template.New("problem").Parse(problemTemplateString))
 
 	var done chan bool
 	var wg sync.WaitGroup
 
-	staticFileServer := http.FileServer(http.Dir(prefixDir + "/static"))
-	content := content.IntervalScan(prefixDir+"/content", config.ScanInterval, done, wg)
+	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
+	content := content.IntervalScan(dir+"/content", config.ScanInterval, done, wg)
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", GetIndex(indexTemplate, config, content))
