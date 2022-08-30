@@ -76,10 +76,6 @@ main() {
 
 	case $subcommand in
 		all)
-			build
-			package
-			;;
-		build)
 			build $args
 			;;
 		clean)

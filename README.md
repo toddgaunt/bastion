@@ -28,7 +28,7 @@ First, make sure the following programs are installed:
 
 Then run the following commands:
 ```
-./make.sh build
+./build.sh build
 ./bastion www.example.com
 ```
 For commandline options and usage information run `bastion -h`
