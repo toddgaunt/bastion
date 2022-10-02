@@ -35,6 +35,8 @@ func Serve(prefixDir string, config Config) {
 
 	addr := fmt.Sprintf(":%d", config.Network.Port)
 
+	log.Printf("Serving on port %d\n", config.Network.Port)
+
 	if config.Network.TLSCert != "" && config.Network.TLSKey != "" {
 		// TLS can be used
 		log.Fatal(http.ListenAndServeTLS(addr, config.Network.TLSCert, config.Network.TLSKey, r))
