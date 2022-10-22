@@ -16,15 +16,15 @@ FMT_YELLOW="$(tput setaf 3)"
 package_files=("bastion" "docs" "www.example.com")
 package=bastion.tar.gz
 
-log() {
+function log() {
 	echo "[$me] $@"
 }
 
-log-warn() {
+function log-warn() {
 	echo "[${FMT_YELLOW}${me}${FMT_NONE}] $@"
 }
 
-log-fatal() {
+function log-fatal() {
 	echo "[${FMT_RED}${me}${FMT_NONE}] $@"
 	exit 1
 }
@@ -33,7 +33,7 @@ log-fatal() {
 # available to be run. If all commands are available, returns with a value of
 # 0. If any of the commands are unavailable, the script returns with a value of
 # 1.
-require() {
+function require() {
 	local missing=""
 	for cmd in $@; do
 		command -v "$cmd" >/dev/null 2>&1 || { missing="$missing $cmd"; }
@@ -46,18 +46,18 @@ require() {
 	fi
 }
 
-build() {
+function build() {
 	log "🔨 building…"
 	go build
 }
 
-clean() {
+function clean() {
 	log "🧹 cleaning…"
 	go clean
 	rm -f $package
 }
 
-package() {
+function package() {
 	log "📦 packaging…"
 	if ! tar -cf - "$package_files" -P |
 		pv -s $(du -sb "$package_files" | awk '{print $1}') |
@@ -66,7 +66,7 @@ package() {
 	fi
 }
 
-increment-version() {
+function increment-version() {
 	version=$(cat VERSION.txt)
 	a=( ${version//./ } )
 	major=${a[0]}
@@ -105,11 +105,11 @@ increment-version() {
 	echo "$version" > VERSION.txt
 }
 
-usage() {
+function usage() {
 	echo "Usage: $me [all|clean|package|version|help]"
 }
 
-main() {
+function main() {
 	local subcommand=${1-all}
 	local args=${@:2}
 
@@ -124,7 +124,7 @@ main() {
 			package $args
 			;;
 		version)
-			version $args
+			increment-version $args
 			;;
 		-h|--help|help)
 			usage
