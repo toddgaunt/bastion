@@ -112,7 +112,7 @@ func New(prefixDir string, config Config) (chi.Router, error) {
 	r := chi.NewRouter()
 
 	var done chan bool
-	var wg sync.WaitGroup
+	var wg = &sync.WaitGroup{}
 
 	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
 	content := content.IntervalScan(dir+"/content", config.ScanInterval, done, wg)

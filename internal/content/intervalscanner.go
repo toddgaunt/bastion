@@ -98,9 +98,9 @@ func scanContent(content *Content, contentPath string) {
 	}
 }
 
-// IntervalScan scans for content every scanInterval seconds. If scanInterval is 0, then a scan is
-// performed every second.
-func IntervalScan(contentPath string, scanInterval int, done chan bool, wg sync.WaitGroup) *Content {
+// IntervalScan scans for content every scanInterval seconds. If scanInterval
+// is 0, then a scan is performed every second by default.
+func IntervalScan(contentPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *Content {
 	content := &Content{}
 
 	if scanInterval == 0 {
