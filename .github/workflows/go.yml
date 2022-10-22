@@ -22,7 +22,7 @@ jobs:
         go-version: 1.18
 
     - name: Build
-      run: ./build.sh
+      run: go build -v ./...
 
     - name: Test
       run: go test -v ./...
