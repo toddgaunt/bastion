@@ -13,6 +13,7 @@
 # Whitelist specific filenames
 !*.gitignore
 !*README.md
+!*VERSION.txt
 
 # Whitelist specific files
 !/LICENSE
