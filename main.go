@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"bastionburrow.com/bastion/internal/router"
+	"github.com/toddgaunt/bastion/internal/router"
 )
 
 func isFlagPassed(name string) bool {

@@ -18,7 +18,7 @@ func Created(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 202
+// Accepted returns a Response with a status code of 202
 func Accepted(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusAccepted,
@@ -26,7 +26,7 @@ func Accepted(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 203
+// NonAuthoritativeInfo returns a Response with a status code of 203
 func NonAuthoritativeInfo(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusNonAuthoritativeInfo,
@@ -34,7 +34,7 @@ func NonAuthoritativeInfo(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 204
+// NoContent returns a Response with a status code of 204
 func NoContent(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusNoContent,
@@ -42,7 +42,7 @@ func NoContent(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 205
+// ResetContent returns a Response with a status code of 205
 func ResetContent(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusResetContent,
@@ -50,7 +50,7 @@ func ResetContent(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 206
+// PartialContent returns a Response with a status code of 206
 func PartialContent(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusPartialContent,
@@ -58,7 +58,7 @@ func PartialContent(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 207
+// MultiStatus returns a Response with a status code of 207
 func MultiStatus(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusMultiStatus,
@@ -66,7 +66,7 @@ func MultiStatus(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 208
+// AlreadyReported returns a Response with a status code of 208
 func AlreadyReported(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusAlreadyReported,
@@ -74,7 +74,7 @@ func AlreadyReported(object interface{}) *Response {
 	}
 }
 
-// Created returns a Response with a status code of 209
+// StatusIMUsed returns a Response with a status code of 209
 func StatusIMUsed(object interface{}) *Response {
 	return &Response{
 		Status: http.StatusIMUsed,

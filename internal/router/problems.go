@@ -9,8 +9,8 @@ import (
 	"net/url"
 	"strings"
 
-	"bastionburrow.com/bastion/internal/httpjson"
 	"github.com/go-chi/chi"
+	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
 const ProblemPath = ".problems"

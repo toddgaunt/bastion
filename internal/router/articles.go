@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"bastionburrow.com/bastion/internal/content"
-	"bastionburrow.com/bastion/internal/httpjson"
 	"github.com/go-chi/chi"
+	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
 type articleVariables struct {

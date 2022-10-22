@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"sort"
 
-	"bastionburrow.com/bastion/internal/content"
-	"bastionburrow.com/bastion/internal/httpjson"
+	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
 type indexVariables struct {

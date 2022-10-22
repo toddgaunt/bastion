@@ -29,6 +29,41 @@ type Problem struct {
 	Status   int    `json:"status"`
 	Detail   string `json:"detail,omitempty"`
 	Instance string `json:"instance,omitempty"`
+	Err      error  `json:"omitempty"`
+}
+
+func pad(s, pad string) string {
+	if s == "" {
+		return s
+	}
+
+	return s + pad
+}
+
+func (p *Problem) Error() string {
+	str := ""
+
+	if p.Type != "" {
+		str = pad(str, ": ")
+		str += p.Type
+	}
+
+	if p.Title != "" {
+		str = pad(str, ": ")
+		str += p.Title
+	}
+
+	if p.Detail != "" {
+		str = pad(str, ": ")
+		str += p.Detail
+	}
+
+	if p.Err != nil {
+		str = pad(str, ": ")
+		str += p.Err.Error()
+	}
+
+	return str
 }
 
 // WriteProblem writes a Problem as an http response.

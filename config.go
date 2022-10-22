@@ -17,7 +17,7 @@
 
 package main
 
-import "bastionburrow.com/bastion/internal/router"
+import "github.com/toddgaunt/bastion/internal/router"
 
 var DefaultConfig = Config{
 	Router: router.Config{

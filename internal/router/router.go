@@ -6,8 +6,8 @@ import (
 	"path"
 	"sync"
 
-	"bastionburrow.com/bastion/internal/content"
 	"github.com/go-chi/chi"
+	"github.com/toddgaunt/bastion/internal/content"
 )
 
 // Config contains all configuration for a bastion server's router.

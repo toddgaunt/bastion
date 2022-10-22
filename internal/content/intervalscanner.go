@@ -10,8 +10,6 @@ import (
 	"strings"
 	"sync"
 	"time"
-
-	"bastionburrow.com/bastion/internal/document"
 )
 
 // generateArticles walks a directory, and generates articles from
@@ -53,7 +51,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 		}
 		article.Markdown = string(bytes)
 
-		doc, err := document.Parse(bytes)
+		doc, err := parseDocument(bytes)
 		if err != nil {
 			article.Error = err
 			return nil
