@@ -34,3 +34,12 @@ Then run the following commands:
 ./bastion www.example.com
 ```
 For commandline options and usage information run `bastion -h`
+
+## Versioning
+Since bastion is mostly used for my own personal
+[website](www.bastionburrow.com), it isn't going to be very stable. I plan on
+changing things around on a whim. With this said, as long as bastion has a
+major version of 0 (e.g. 0.1.12), minor versions will be treated as breaking
+changes, and patch versions will be treated as backward-compatible changes.
+Expect more for the former than the latter. If I one day decide to release
+bastion, then I will start using semver properly.
