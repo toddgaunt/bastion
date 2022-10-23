@@ -24,7 +24,7 @@ const problemTemplateString = `<!DOCTYPE html>
 		<div class="site-navigation">
 			<a href="/">{{.Site.Name}}</a>
 			{{range $name, $route := .Pinned}}
-			<a href="/{{$route}}">{{$name}}</a>
+			<a href="{{$route}}">{{$name}}</a>
 			{{end}}
 		</div>
 		<div class="content">
