@@ -28,9 +28,12 @@ var DefaultConfig = Config{
 		ScanInterval: 60,
 	},
 	Network: ConfigNetwork{
-		Port:    8080,
-		TLSCert: "",
-		TLSKey:  "",
+		Port: 8080,
+		TLS: ConfigTLS{
+			Cert:    "",
+			Key:     "",
+			Disable: true,
+		},
 	},
 }
 
@@ -38,9 +41,14 @@ var DefaultConfig = Config{
 // networking information, such as which port to bind and the paths to the
 // optional TLS certificate and key to serve HTTPS.
 type ConfigNetwork struct {
-	Port    int    `json:"port"`
-	TLSCert string `json:"tls-cert"`
-	TLSKey  string `json:"tls-key"`
+	Port int       `json:"port"`
+	TLS  ConfigTLS `json:"tls"`
+}
+
+type ConfigTLS struct {
+	Cert    string `json:"tls-cert"`
+	Key     string `json:"tls-key"`
+	Disable bool   `json:"notls"`
 }
 
 // Config contains all website configuration options for a Monastery website

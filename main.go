@@ -37,9 +37,9 @@ func Serve(prefixDir string, config Config) {
 
 	log.Printf("Serving on port %d\n", config.Network.Port)
 
-	if config.Network.TLSCert != "" && config.Network.TLSKey != "" {
+	if !config.Network.TLS.Disable && (config.Network.TLS.Cert != "" && config.Network.TLS.Key != "") {
 		// TLS can be used
-		log.Fatal(http.ListenAndServeTLS(addr, config.Network.TLSCert, config.Network.TLSKey, r))
+		log.Fatal(http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
 	} else {
 		log.Print("Warning: not using TLS")
 		// Allow non-TLS for use until a certificate can be acquired
@@ -52,11 +52,13 @@ func main() {
 	var tlsCert string
 	var tlsKey string
 	var exampleConfig bool
+	var tlsDisable bool
 
 	flag.IntVar(&port, "port", 0, "Specify a port to serve and listen on")
 	flag.StringVar(&tlsCert, "tls-cert", "", "Path to server TLS Certificate for HTTPS")
 	flag.StringVar(&tlsKey, "tls-key", "", "Path to server TLS Key for HTTPS")
 	flag.BoolVar(&exampleConfig, "example-config", false, "Output an example config.json")
+	flag.BoolVar(&tlsDisable, "tls-disable", false, "Disable TLS even if the config specifies it")
 
 	flag.Parse()
 
@@ -92,9 +94,11 @@ func main() {
 		case "port":
 			config.Network.Port = port
 		case "tls-cert":
-			config.Network.TLSCert = tlsCert
+			config.Network.TLS.Cert = tlsCert
 		case "tls-key":
-			config.Network.TLSKey = tlsKey
+			config.Network.TLS.Key = tlsKey
+		case "tls-disable":
+			config.Network.TLS.Disable = tlsDisable
 		}
 	})
 
