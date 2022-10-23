@@ -46,9 +46,9 @@ type ConfigNetwork struct {
 }
 
 type ConfigTLS struct {
-	Cert    string `json:"tls-cert"`
-	Key     string `json:"tls-key"`
-	Disable bool   `json:"notls"`
+	Cert    string `json:"cert"`
+	Key     string `json:"key"`
+	Disable bool   `json:"disable"`
 }
 
 // Config contains all website configuration options for a Monastery website
