@@ -24,7 +24,7 @@ const articleTemplateString = `<!DOCTYPE html>
 	<body>
 		<div class="site-navigation">
 			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Site.Pinned}}
+			{{range $name, $route := .Pinned}}
 			<a href="/{{$route}}">{{$name}}</a>
 			{{end}}
 		</div>
