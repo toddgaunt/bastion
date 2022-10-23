@@ -24,7 +24,6 @@ var DefaultConfig = Config{
 		Name:         "Example",
 		Description:  "This is a simple example website",
 		Style:        "default",
-		Pinned:       map[string]string{"About": "about", "Contact": "contact"},
 		ScanInterval: 60,
 	},
 	Network: ConfigNetwork{

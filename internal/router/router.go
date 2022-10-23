@@ -13,11 +13,10 @@ import (
 
 // Config contains all configuration for a bastion server's router.
 type Config struct {
-	Name         string            `json:"name"`
-	Description  string            `json:"description"`
-	Style        string            `json:"style"`
-	Pinned       map[string]string `json:"pinned"`
-	ScanInterval int               `json:"scan_interval"`
+	Name         string `json:"name"`
+	Description  string `json:"description"`
+	Style        string `json:"style"`
+	ScanInterval int    `json:"scan_interval"`
 }
 
 var (
