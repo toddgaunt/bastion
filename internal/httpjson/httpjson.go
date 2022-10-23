@@ -85,10 +85,10 @@ func WriteProblem(w http.ResponseWriter, problem Problem) {
 
 // HandlerFunc wraps an HTTP handler that returns a Response and a Problem as a
 // standard http.HandlerFunc that returns nothing. This allows for values to be
-// returned to be written rather than writing the response procedurally while
-// still being compatible with functions that expect a standard
-// http.HandlerFunc. The response's content type is set to "application/json"
-// if no Content-Type header was set in the Response.
+// returned rather than writing the response procedurally while still being
+// compatible with functions that expect a standard http.HandlerFunc. The
+// response's content type is set to "application/json" if no Content-Type
+// header was set in the Response.
 func HandlerFunc(
 	jsonHandler func(r *http.Request) (*Response, *Problem),
 ) func(w http.ResponseWriter, r *http.Request) {

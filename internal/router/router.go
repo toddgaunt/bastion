@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/articles"
 )
 
 // Config contains all configuration for a bastion server's router.
@@ -18,87 +18,6 @@ type Config struct {
 	Pinned       map[string]string `json:"pinned"`
 	ScanInterval int               `json:"scan_interval"`
 }
-
-const indexTemplateString = `<!DOCTYPE html>
-<html>
-	<head>
-		<title>{{.Title}}</title>
-		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Site.Pinned}}
-			<a href="/{{$route}}">{{$name}}</a>
-			{{end}}
-		</div>
-		<div class="content">
-			<article>
-				<div class="article-header">
-					<h1 class="article-title">{{.Site.Name}}</h1>
-					<p class="article-description">{{.Site.Description}}</p>
-				</div>
-				<div class="article-body">
-					<ul>
-						{{range $k, $v := .SortedIndex}}
-						<li><a href="{{$v.Route}}">{{$v.FormattedDate}} - {{$v.Title}}</a></li>
-						{{end}}
-					</ul>
-				</div>
-			</article>
-		</div>
-	</body>
-</html>`
-
-const articleTemplateString = `<!DOCTYPE html>
-<html>
-	<head>
-		<title>{{.Title}}</title>
-		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Site.Pinned}}
-			<a href="/{{$route}}">{{$name}}</a>
-			{{end}}
-		</div>
-		<div class="content">
-			{{.HTML}}
-		</div>
-	</body>
-</html>`
-
-const problemTemplateString = `<!DOCTYPE html>
-<html>
-	<head>
-		<title>{{.Title}}</title>
-		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Site.Pinned}}
-			<a href="/{{$route}}">{{$name}}</a>
-			{{end}}
-		</div>
-		<div class="content">
-			<article>
-				<div class="problem-header">
-					<hr>
-					<h1 class="problem-title">{{.Title}}</h1>
-					<hr>
-				</div>
-				<div class="problem-body">
-					<p>{{.Description}}</p>
-				</div>
-			</article>
-		</div>
-	</body>
-</html>`
 
 var (
 	indexTemplate   = template.Must(template.New("index").Parse(indexTemplateString))
@@ -115,11 +34,11 @@ func New(prefixDir string, config Config) (chi.Router, error) {
 	var wg = &sync.WaitGroup{}
 
 	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
-	content := content.IntervalScan(dir+"/content", config.ScanInterval, done, wg)
+	articles := articles.IntervalScan(dir+"/articles", config.ScanInterval, done, wg)
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", GetIndex(indexTemplate, config, content))
-		r.With(ArticlesCtx).Get("/*", GetArticle(articleTemplate, config, content))
+		r.Get("/", GetIndex(indexTemplate, config, articles))
+		r.With(ArticlesCtx).Get("/*", GetArticle(articleTemplate, config, articles))
 	})
 
 	r.Route("/"+ProblemPath, func(r chi.Router) {

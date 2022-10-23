@@ -1,4 +1,4 @@
-package content
+package articles
 
 import (
 	"bufio"

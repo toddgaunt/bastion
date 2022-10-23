@@ -13,6 +13,35 @@ import (
 	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
+const problemTemplateString = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Site.Pinned}}
+			<a href="/{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div class="content">
+			<article>
+				<div class="problem-header">
+					<hr>
+					<h1 class="problem-title">{{.Title}}</h1>
+					<hr>
+				</div>
+				<div class="problem-body">
+					<p>{{.Description}}</p>
+				</div>
+			</article>
+		</div>
+	</body>
+</html>`
+
 const ProblemPath = ".problems"
 
 // ProblemHandler wraps an HTTP handler that returns a httpjson.Problem as a standard

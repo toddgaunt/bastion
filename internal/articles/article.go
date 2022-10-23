@@ -1,4 +1,4 @@
-package content
+package articles
 
 import (
 	"fmt"
@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-type Content struct {
+type ArticleMap struct {
 	Mutex    sync.RWMutex
 	Articles map[string]*Article
 }

@@ -1,4 +1,4 @@
-package content
+package articles
 
 import (
 	"fmt"
@@ -77,7 +77,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 
 // scanContent updates the content based on whats found in the directory at
 // contentPath.
-func scanContent(content *Content, contentPath string) {
+func scanContent(content *ArticleMap, contentPath string) {
 	content.Mutex.Lock()
 	defer content.Mutex.Unlock()
 
@@ -98,8 +98,8 @@ func scanContent(content *Content, contentPath string) {
 
 // IntervalScan scans for content every scanInterval seconds. If scanInterval
 // is 0, then a scan is performed every second by default.
-func IntervalScan(contentPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *Content {
-	content := &Content{}
+func IntervalScan(contentPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *ArticleMap {
+	content := &ArticleMap{}
 
 	if scanInterval == 0 {
 		scanInterval = 1

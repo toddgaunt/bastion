@@ -10,9 +10,29 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/articles"
 	"github.com/toddgaunt/bastion/internal/httpjson"
 )
+
+const articleTemplateString = `<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Site.Pinned}}
+			<a href="/{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div class="content">
+			{{.HTML}}
+		</div>
+	</body>
+</html>`
 
 type articleVariables struct {
 	Title       string
@@ -37,7 +57,7 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(tmpl *template.Template, config Config, content *content.Content) func(w http.ResponseWriter, r *http.Request) {
+func GetArticle(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) {
 	f := func(w http.ResponseWriter, r *http.Request) *httpjson.Problem {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
@@ -46,10 +66,10 @@ func GetArticle(tmpl *template.Template, config Config, content *content.Content
 		var markdown string
 		var vars articleVariables
 		var getArticle = func(articleKey string) *httpjson.Problem {
-			content.Mutex.RLock()
-			defer content.Mutex.RUnlock()
+			articleMap.Mutex.RLock()
+			defer articleMap.Mutex.RUnlock()
 
-			article, ok := content.Articles[articleKey]
+			article, ok := articleMap.Articles[articleKey]
 
 			if !ok {
 				return &httpjson.Problem{
