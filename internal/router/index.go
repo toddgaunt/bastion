@@ -20,8 +20,8 @@ const indexTemplateString = `<!DOCTYPE html>
 	<body>
 		<div class="site-navigation">
 			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Site.Pinned}}
-			<a href="/{{$route}}">{{$name}}</a>
+			{{range $name, $route := .Pinned}}
+			<a href="{{$route}}">{{$name}}</a>
 			{{end}}
 		</div>
 		<div class="content">
@@ -49,20 +49,34 @@ type indexVariables struct {
 	ArticleMap  *articles.ArticleMap
 }
 
-func (vars indexVariables) SortedIndex() []*articles.Article {
-	var sorted []*articles.Article
-
-	//NOTE: critical section begin
+// Pinned creates a mapping of pinned article titles to their route
+func (vars indexVariables) Pinned() map[string]string {
 	vars.ArticleMap.Mutex.RLock()
+	defer vars.ArticleMap.Mutex.RUnlock()
+
+	var mapping = map[string]string{}
+	for _, v := range vars.ArticleMap.Articles {
+		// Only add pinned articles to the mapping
+		if v.Pinned == true {
+			mapping[v.Title] = v.Route
+		}
+	}
+
+	return mapping
+}
+
+func (vars indexVariables) SortedIndex() []*articles.Article {
+	vars.ArticleMap.Mutex.RLock()
+	defer vars.ArticleMap.Mutex.RUnlock()
+
+	var sorted []*articles.Article
 	// Created a list of nested articles sorted by date
 	for _, v := range vars.ArticleMap.Articles {
 		// Only add unpinned articles to the index
-		if _, ok := vars.Site.Pinned[v.Title]; !ok {
+		if v.Pinned == false {
 			sorted = append(sorted, v)
 		}
 	}
-	vars.ArticleMap.Mutex.RUnlock()
-	//NOTE: critical section end
 
 	sort.Slice(sorted, func(i int, j int) bool {
 		return sorted[i].Title < sorted[j].Title

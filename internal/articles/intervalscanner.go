@@ -1,12 +1,14 @@
 package articles
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -60,6 +62,16 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 		article.Title = doc.Properties.Value("Title")
 		article.Description = doc.Properties.Value("Description")
 		article.Author = doc.Properties.Value("Author")
+
+		pin := strings.ToLower(doc.Properties.Value("Pinned"))
+		if pin != "" {
+			if pin == "true" || pin == "false" {
+				article.Pinned, _ = strconv.ParseBool(pin)
+			} else {
+				article.Error = errors.New("Pinned must be true or false")
+			}
+		}
+
 		article.SetTimestamps(doc.Properties.Value("Created"), doc.Properties.Value("Updated"))
 
 		html, err := doc.GenerateHTML()
@@ -75,17 +87,17 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 	return articles, nil
 }
 
-// scanContent updates the content based on whats found in the directory at
-// contentPath.
-func scanContent(content *ArticleMap, contentPath string) {
-	content.Mutex.Lock()
-	defer content.Mutex.Unlock()
+// scanArticles updates the articleMap based on whats found in the directory at
+// articlesPath.
+func scanArticles(articleMap *ArticleMap, articlesPath string) {
+	articleMap.Mutex.Lock()
+	defer articleMap.Mutex.Unlock()
 
-	articles, err := generateArticles(contentPath)
+	articles, err := generateArticles(articlesPath)
 	if err != nil {
 		log.Print(err.Error())
 	} else {
-		content.Articles = articles
+		articleMap.Articles = articles
 	}
 	for _, article := range articles {
 		if article.Error == nil {
@@ -96,10 +108,10 @@ func scanContent(content *ArticleMap, contentPath string) {
 	}
 }
 
-// IntervalScan scans for content every scanInterval seconds. If scanInterval
+// IntervalScan scans for articles every scanInterval seconds. If scanInterval
 // is 0, then a scan is performed every second by default.
-func IntervalScan(contentPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *ArticleMap {
-	content := &ArticleMap{}
+func IntervalScan(articlesPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *ArticleMap {
+	articleMap := &ArticleMap{}
 
 	if scanInterval == 0 {
 		scanInterval = 1
@@ -114,12 +126,12 @@ func IntervalScan(contentPath string, scanInterval int, done chan bool, wg *sync
 				break loop
 			default:
 				log.Print("🔍 scanning content")
-				scanContent(content, contentPath)
+				scanArticles(articleMap, articlesPath)
 				time.Sleep(time.Duration(scanInterval) * time.Second)
 			}
 		}
 		wg.Done()
 	}()
 
-	return content
+	return articleMap
 }

@@ -17,6 +17,7 @@ type Article struct {
 	Title       string
 	Description string
 	Author      string
+	Pinned      bool
 	Created     time.Time
 	Updated     time.Time
 
