@@ -4,6 +4,7 @@ import (
 	"html/template"
 	"net/http"
 	"path"
+	"sort"
 	"sync"
 
 	"github.com/go-chi/chi"
@@ -24,6 +25,54 @@ var (
 	articleTemplate = template.Must(template.New("article").Parse(articleTemplateString))
 	problemTemplate = template.Must(template.New("problem").Parse(problemTemplateString))
 )
+
+type templateVariables struct {
+	Title       string
+	Description string
+	Site        Config
+	HTML        template.HTML
+	ArticleMap  *articles.ArticleMap
+}
+
+// Pinned creates a mapping of pinned article titles to their route
+func (vars templateVariables) Pinned() map[string]string {
+	vars.ArticleMap.Mutex.RLock()
+	defer vars.ArticleMap.Mutex.RUnlock()
+
+	var mapping = map[string]string{}
+	for _, v := range vars.ArticleMap.Articles {
+		// Only add pinned articles to the mapping
+		if v.Pinned == true {
+			mapping[v.Title] = v.Route
+		}
+	}
+
+	return mapping
+}
+
+func (vars templateVariables) SortedIndex() []*articles.Article {
+	vars.ArticleMap.Mutex.RLock()
+	defer vars.ArticleMap.Mutex.RUnlock()
+
+	var sorted []*articles.Article
+	// Created a list of nested articles sorted by date
+	for _, v := range vars.ArticleMap.Articles {
+		// Only add unpinned articles to the index
+		if v.Pinned == false {
+			sorted = append(sorted, v)
+		}
+	}
+
+	sort.Slice(sorted, func(i int, j int) bool {
+		return sorted[i].Title < sorted[j].Title
+	})
+
+	sort.Slice(sorted, func(i int, j int) bool {
+		return sorted[i].Created.After(sorted[j].Created)
+	})
+
+	return sorted
+}
 
 // New creates a new router for a bastion website.
 func New(prefixDir string, config Config) (chi.Router, error) {

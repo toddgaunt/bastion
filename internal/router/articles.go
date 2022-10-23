@@ -34,13 +34,6 @@ const articleTemplateString = `<!DOCTYPE html>
 	</body>
 </html>`
 
-type articleVariables struct {
-	Title       string
-	Description string
-	Site        Config
-	HTML        template.HTML
-}
-
 const articlesCtxKey = "articleID"
 
 // ArticlesCtx is middleware for a router to provide a clean path to an article
@@ -64,7 +57,7 @@ func GetArticle(tmpl *template.Template, config Config, articleMap *articles.Art
 		// The critical section is wrapped within a closure so defer can be
 		// used for the mutex operations.
 		var markdown string
-		var vars articleVariables
+		var vars templateVariables
 		var getArticle = func(articleKey string) *httpjson.Problem {
 			articleMap.Mutex.RLock()
 			defer articleMap.Mutex.RUnlock()
@@ -88,10 +81,11 @@ func GetArticle(tmpl *template.Template, config Config, articleMap *articles.Art
 			}
 
 			markdown = article.Markdown
-			vars = articleVariables{
+			vars = templateVariables{
 				Title:       article.Title,
 				Description: article.Description,
 				Site:        config,
+				ArticleMap:  articleMap,
 				HTML:        article.HTML,
 			}
 

@@ -89,12 +89,6 @@ func ProblemHandler(
 	}
 }
 
-type problemVariables struct {
-	Title       string
-	Description string
-	Site        Config
-}
-
 const problemsCtxKey = "problemID"
 
 // ProblemsCtx is a middleware that extracts the problem ID
@@ -126,7 +120,7 @@ func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWrit
 			return &httpjson.Problem{Status: http.StatusNotFound, Detail: fmt.Sprintf("Explanation for %s does not exist", problemID)}
 		}
 
-		vars := problemVariables{
+		vars := templateVariables{
 			Title:       problemID,
 			Description: description,
 			Site:        config,
