@@ -13,35 +13,6 @@ import (
 	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
-const problemTemplateString = `<!DOCTYPE html>
-<html>
-	<head>
-		<title>{{.Title}}</title>
-		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Pinned}}
-			<a href="{{$route}}">{{$name}}</a>
-			{{end}}
-		</div>
-		<div class="content">
-			<article>
-				<div class="problem-header">
-					<hr>
-					<h1 class="problem-title">{{.Title}}</h1>
-					<hr>
-				</div>
-				<div class="problem-body">
-					<p>{{.Description}}</p>
-				</div>
-			</article>
-		</div>
-	</body>
-</html>`
-
 const ProblemPath = ".problems"
 
 // ProblemHandler wraps an HTTP handler that returns a httpjson.Problem as a standard
@@ -89,13 +60,13 @@ func ProblemHandler(
 	}
 }
 
-const problemsCtxKey = "problemID"
+const problemsCtxKey = contextKey("problemID")
 
 // ProblemsCtx is a middleware that extracts the problem ID
 // from the URL of the HTTP request.
 func ProblemsCtx(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		problemID := chi.URLParam(r, problemsCtxKey)
+		problemID := chi.URLParam(r, "problemID")
 		ctx := context.WithValue(r.Context(), problemsCtxKey, problemID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
@@ -128,7 +99,7 @@ func GetProblem(tmpl *template.Template, config Config) func(w http.ResponseWrit
 
 		buf := &bytes.Buffer{}
 		tmpl.Execute(buf, vars)
-		w.Write([]byte(buf.String()))
+		w.Write(buf.Bytes())
 
 		return nil
 	}

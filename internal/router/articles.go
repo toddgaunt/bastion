@@ -3,6 +3,7 @@ package router
 import (
 	"bytes"
 	"context"
+	_ "embed"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -14,27 +15,7 @@ import (
 	"github.com/toddgaunt/bastion/internal/httpjson"
 )
 
-const articleTemplateString = `<!DOCTYPE html>
-<html>
-	<head>
-		<title>{{.Title}}</title>
-		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
-	</head>
-	<body>
-		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Pinned}}
-			<a href="{{$route}}">{{$name}}</a>
-			{{end}}
-		</div>
-		<div class="content">
-			{{.HTML}}
-		</div>
-	</body>
-</html>`
-
-const articlesCtxKey = "articleID"
+const articlesCtxKey = contextKey("articleID")
 
 // ArticlesCtx is middleware for a router to provide a clean path to an article
 // for an HTTPHandler.

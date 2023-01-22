@@ -1,12 +1,8 @@
 {
-	"router": {
+	"content": {
 		"name": "Example",
 		"description": "This is a simple example website",
 		"style": "default",
-		"pinned": {
-			"About": "about",
-			"Contact": "contact"
-		},
 		"scan_interval": 60
 	},
 	"network": {

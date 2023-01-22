@@ -30,9 +30,7 @@ function log-fatal() {
 }
 
 # require() accepts a list of space separated commands and checks if they are
-# available to be run. If all commands are available, returns with a value of
-# 0. If any of the commands are unavailable, the script returns with a value of
-# 1.
+# available to be run.
 function require() {
 	local missing=""
 	for cmd in $@; do

@@ -23,12 +23,7 @@ func isFlagPassed(name string) bool {
 }
 
 func Serve(prefixDir string, config Config) {
-	// default ScanInterval
-	if config.Router.ScanInterval < 1 {
-		config.Router.ScanInterval = 5
-	}
-
-	r, err := router.New(prefixDir, config.Router)
+	r, err := router.New(prefixDir, config.Content)
 	if err != nil {
 		log.Fatalf("couldn't create router: %v", err)
 	}
@@ -57,8 +52,8 @@ func main() {
 	flag.IntVar(&port, "port", 0, "Specify a port to serve and listen on")
 	flag.StringVar(&tlsCert, "tls-cert", "", "Path to server TLS Certificate for HTTPS")
 	flag.StringVar(&tlsKey, "tls-key", "", "Path to server TLS Key for HTTPS")
-	flag.BoolVar(&exampleConfig, "example-config", false, "Output an example config.json")
 	flag.BoolVar(&tlsDisable, "tls-disable", false, "Disable TLS even if the config specifies it")
+	flag.BoolVar(&exampleConfig, "example-config", false, "Output an example config.json")
 
 	flag.Parse()
 
@@ -78,8 +73,8 @@ func main() {
 		prefixDir = args[0]
 	}
 
-	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	var config Config
+	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	if err != nil {
 		log.Fatalf("couldn't load config: %v", err)
 	}

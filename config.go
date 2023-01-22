@@ -20,7 +20,7 @@ package main
 import "github.com/toddgaunt/bastion/internal/router"
 
 var DefaultConfig = Config{
-	Router: router.Config{
+	Content: router.Config{
 		Name:         "Example",
 		Description:  "This is a simple example website",
 		Style:        "default",
@@ -52,6 +52,6 @@ type ConfigTLS struct {
 
 // Config contains all website configuration options for a Monastery website
 type Config struct {
-	Router  router.Config `json:"router"`
+	Content router.Config `json:"content"`
 	Network ConfigNetwork `json:"network"`
 }

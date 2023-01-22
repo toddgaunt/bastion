@@ -19,7 +19,11 @@ import (
 func generateArticles(contentPath string) (map[string]*Article, error) {
 	articles := make(map[string]*Article)
 
-	filepath.Walk(contentPath, func(articlePath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(contentPath, func(articlePath string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+
 		articleName := path.Base(articlePath)
 		articleRoute := strings.TrimPrefix(strings.TrimSuffix(articlePath, path.Ext(articlePath)), path.Clean(contentPath))
 
@@ -68,7 +72,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			if pin == "true" || pin == "false" {
 				article.Pinned, _ = strconv.ParseBool(pin)
 			} else {
-				article.Error = errors.New("Pinned must be true or false")
+				article.Error = errors.New("article property 'Pinned' must be true or false")
 			}
 		}
 
@@ -83,6 +87,10 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 
 		return nil
 	})
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate articles: %w", err)
+	}
 
 	return articles, nil
 }
@@ -109,12 +117,12 @@ func scanArticles(articleMap *ArticleMap, articlesPath string) {
 }
 
 // IntervalScan scans for articles every scanInterval seconds. If scanInterval
-// is 0, then a scan is performed every second by default.
+// is 0, then a scan is only performed once at startup.
 func IntervalScan(articlesPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *ArticleMap {
 	articleMap := &ArticleMap{}
 
 	if scanInterval == 0 {
-		scanInterval = 1
+		log.Printf("scan_interval is 0, articles will only be scanned once")
 	}
 
 	wg.Add(1)
@@ -127,6 +135,9 @@ func IntervalScan(articlesPath string, scanInterval int, done chan bool, wg *syn
 			default:
 				log.Print("🔍 scanning content")
 				scanArticles(articleMap, articlesPath)
+				if scanInterval == 0 {
+					break loop
+				}
 				time.Sleep(time.Duration(scanInterval) * time.Second)
 			}
 		}

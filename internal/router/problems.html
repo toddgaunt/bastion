@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>{{.Title}}</title>
+		<meta name="description" content="{{.Description}}">
+		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+	</head>
+	<body>
+		<div class="site-navigation">
+			<a href="/">{{.Site.Name}}</a>
+			{{range $name, $route := .Pinned}}
+			<a href="{{$route}}">{{$name}}</a>
+			{{end}}
+		</div>
+		<div class="content">
+			<article>
+				<div class="problem-header">
+					<hr>
+					<h1 class="problem-title">{{.Title}}</h1>
+					<hr>
+				</div>
+				<div class="problem-body">
+					<p>{{.Description}}</p>
+				</div>
+			</article>
+		</div>
+	</body>
+</html>
