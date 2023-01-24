@@ -29,7 +29,7 @@ type Problem struct {
 	Status   int    `json:"status"`
 	Detail   string `json:"detail,omitempty"`
 	Instance string `json:"instance,omitempty"`
-	Err      error  `json:"omitempty"`
+	Err      error  `json:"-"`
 }
 
 func pad(s, pad string) string {
@@ -72,12 +72,14 @@ func WriteProblem(w http.ResponseWriter, problem Problem) {
 	if problem.Status == 0 {
 		problem.Status = http.StatusInternalServerError
 	}
+
 	if problem.Title == "" {
 		problem.Title = http.StatusText(problem.Status)
 	}
+
 	// MarshalIndent is used since problems are meant to be as human
-	// readable as possible, they aren't worth minifying.
-	var body, _ = json.MarshalIndent(problem, "", "  ")
+	// readable as possible. They aren't worth minifying.
+	body, _ := json.MarshalIndent(problem, "", "  ")
 	w.Header().Add(contentTypeHeader, contentTypeProblem)
 	w.WriteHeader(problem.Status)
 	w.Write(body)
@@ -93,28 +95,33 @@ func HandlerFunc(
 	jsonHandler func(r *http.Request) (*Response, *Problem),
 ) func(w http.ResponseWriter, r *http.Request) {
 	var wrapped = func(w http.ResponseWriter, r *http.Request) {
-		var response, problem = jsonHandler(r)
+		response, problem := jsonHandler(r)
+
 		if response == nil && problem == nil {
 			WriteProblem(w, Problem{})
 		}
+
 		if problem != nil {
 			WriteProblem(w, *problem)
 		}
 
-		var body, err = json.Marshal(response.Object)
+		body, err := json.Marshal(response.Object)
 		if err != nil {
 			WriteProblem(w, Problem{})
 		}
-		var header = w.Header()
+
+		header := w.Header()
 		for key, values := range response.Header {
 			for _, val := range values {
 				header.Add(key, val)
 			}
 		}
+
 		// Set Content-Type to JSON only if there wasn't one provided by the caller.
 		if header.Get(contentTypeHeader) == "" {
 			header.Add(contentTypeHeader, contentTypeJSON)
 		}
+
 		w.WriteHeader(response.Status)
 		w.Write(body)
 	}
