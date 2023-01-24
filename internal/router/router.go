@@ -39,7 +39,7 @@ func New(prefixDir string, config Config) (chi.Router, error) {
 	r.Route("/"+ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(ProblemsCtx)
-			r.Get("/", GetProblem(problemTemplate, config))
+			r.Get("/", GetProblem(problemTemplate, config, articles))
 		})
 	})
 
