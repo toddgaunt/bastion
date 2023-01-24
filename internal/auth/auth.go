@@ -9,53 +9,59 @@ import (
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
-// JWT contains signed claim information.
-type JWT string
-
-// Claims contains information an authentication claims to verify.
-type Claims struct {
-	UserID string `json:"uid"`
-	Expiry int64  `json:"exp"` // RFC 7519 4.1.4
-}
-
 const (
-	keySize   = 16
-	cryptAlgo = jose.A128GCM
+	keySize   = 32
+	cryptAlgo = jose.A256GCM
 	signAlgo  = jose.HS256
 )
 
+// JWT contains signed claim information.
+type JWT string
+
+type SymmetricKey [keySize]byte
+
+// Claims contains information an authentication claims to verify.
+type Claims struct {
+	UserID    string `json:"uid"`
+	Expiry    int64  `json:"exp"` // RFC 7519 4.1.4
+	NotBefore int64  `json:"nbf"` // RFC 7519 4.1.5
+	IssuedAt  int64  `json:"iat"` // RFC 7519 4.1.6
+}
+
 // Error keys exported by this package.
 var (
-	ErrJWTDecodeBytes = errors.Key("JWTDecode")
-	ErrJWTBadAlgo     = errors.Key("JWTBadAlgo")
+	ErrJWTDecodeBytes = errors.E{Key: "JWTDecode"}
+	ErrJWTBadAlgo     = errors.E{Key: "JWTBadAlgo"}
 )
 
 // NewClaims creates new claims with the information provided
-func NewClaims(uid string, lifetime time.Duration) Claims {
+func NewClaims(uid string, now time.Time, lifetime time.Duration) Claims {
 	return Claims{
-		UserID: uid,
-		Expiry: time.Now().Add(lifetime).Unix(),
+		UserID:    uid,
+		IssuedAt:  now.Unix(),
+		NotBefore: now.Unix(),
+		Expiry:    now.Add(lifetime).Unix(),
 	}
 }
 
 // Encrypt signs then encrypts claim information into a JSON Web Token (JWT).
-func Encrypt(claims Claims, secret []byte) (JWT, error) {
+func Encrypt(claims Claims, key SymmetricKey) (JWT, error) {
 	payload, err := json.Marshal(claims)
 	if err != nil {
 		return "", errors.Errorf("failed to encrypt claims: %w", err)
 	}
 
-	token, err := jose.EncryptBytes(payload, jose.DIR, cryptAlgo, secret, jose.Zip(jose.DEF))
+	token, err := jose.EncryptBytes(payload, jose.DIR, cryptAlgo, key[0:keySize], jose.Zip(jose.DEF))
 	return JWT(token), err
 }
 
 // Decrypt decrypts claim information from an encrypted JWT.
-func Decrypt(token JWT, secret []byte) (Claims, error) {
-	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), secret)
+func Decrypt(token JWT, key SymmetricKey) (Claims, error) {
+	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
 		return Claims{}, errors.E{
 			Msg: "failed to decrypt token",
-			Key: ErrJWTDecodeBytes,
+			Key: ErrJWTDecodeBytes.Key,
 			Err: err,
 		}
 	}
@@ -64,8 +70,8 @@ func Decrypt(token JWT, secret []byte) (Claims, error) {
 	algo, ok := JWTHeader["enc"].(string)
 	if !ok || algo != cryptAlgo {
 		return Claims{}, errors.E{
-			Msg: "only the the A128GCM encryption algorithm is supported",
-			Key: ErrJWTBadAlgo,
+			Msg: errors.Msgf("only the the %s encryption algorithm is supported", cryptAlgo),
+			Key: ErrJWTBadAlgo.Key,
 			Err: errors.Errorf("unsupported algorithm %s", algo),
 		}
 	}
@@ -81,23 +87,23 @@ func Decrypt(token JWT, secret []byte) (Claims, error) {
 }
 
 // Sign signs claim information without encrypting it.
-func Sign(claims Claims, secret []byte) (JWT, error) {
+func Sign(claims Claims, key SymmetricKey) (JWT, error) {
 	payload, err := json.Marshal(claims)
 	if err != nil {
 		return "", errors.Errorf("failed to encrypt claims: %w", err)
 	}
 
-	token, err := jose.SignBytes(payload, jose.HS256, secret)
+	token, err := jose.SignBytes(payload, jose.HS256, key[0:keySize])
 	return JWT(token), err
 }
 
 // Verify verifies the signature of a signed token.
-func Verify(token JWT, secret []byte) (Claims, error) {
-	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), secret)
+func Verify(token JWT, key SymmetricKey) (Claims, error) {
+	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
 		return Claims{}, errors.E{
 			Msg: "failed to verify token",
-			Key: ErrJWTDecodeBytes,
+			Key: ErrJWTDecodeBytes.Key,
 			Err: err,
 		}
 	}
@@ -106,8 +112,8 @@ func Verify(token JWT, secret []byte) (Claims, error) {
 	algo, ok := JWTHeader["alg"].(string)
 	if !ok || algo != signAlgo {
 		return Claims{}, errors.E{
-			Msg: "only the the HS256 signature algorithm is supported",
-			Key: ErrJWTBadAlgo,
+			Msg: errors.Msgf("only the the %s signature algorithm is supported", signAlgo),
+			Key: ErrJWTBadAlgo.Key,
 			Err: errors.Errorf("unsupported algorithm %s", algo),
 		}
 	}
@@ -122,25 +128,17 @@ func Verify(token JWT, secret []byte) (Claims, error) {
 	return claims, nil
 }
 
-// IsExpired returns true if the authentication's expiry time has been eclipsed
-// by the current system time.
-func (a Claims) IsExpired() bool {
-	return a.Expiry <= time.Now().Unix()
+// IsValid returns true if the authentication's expiry time has been eclipsed
+// by the passed in time.
+func (a Claims) IsValid(now time.Time) bool {
+	return a.NotBefore <= now.Unix() && a.Expiry <= now.Unix()
 }
 
-// Equal checks two authentication data for equivalent fields, excluding expiry.
-func (a Claims) Equal(b Claims) bool {
-	return a.UserID == b.UserID
-}
-
-// GenerateKey creates a random key for signing bearer tokens. It will always
-// always create a key for valid use by EncryptAuthenticationToken and
-// DecryptAuthenticationToken.
-func GenerateKey() ([]byte, error) {
-	var key = make([]byte, keySize)
-	var err error
-	if _, err = rand.Read(key); err != nil {
-		return nil, err
+// GenerateSymmetricKey creates a random symmetric key for signing or encrypting claims.
+func GenerateSymmetricKey() (SymmetricKey, error) {
+	var key SymmetricKey
+	if n, err := rand.Read(key[:]); n != keySize || err != nil {
+		return key, err
 	}
 
 	return key, nil

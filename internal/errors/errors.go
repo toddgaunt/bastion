@@ -158,7 +158,7 @@ func (e E) Unwrap() error {
 
 // Is returns true if e is equivalent to the target error.
 func (e E) Is(target error) bool {
-	if err, ok := target.(*E); ok {
+	if err, ok := target.(E); ok {
 		return e.Op == err.Op && e.Code == err.Code && e.Key == err.Key
 	}
 
