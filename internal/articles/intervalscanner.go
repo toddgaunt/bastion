@@ -45,21 +45,21 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
 		defer func() {
-			if article.Error != nil || article.HTML != "" {
+			if article.Err != nil || article.HTML != "" {
 				articles[articleRoute] = article
 			}
 		}()
 
 		bytes, err := ioutil.ReadFile(articlePath)
 		if err != nil {
-			article.Error = fmt.Errorf("Article '%s' could not be read from the filesystem", articleRoute)
+			article.Err = fmt.Errorf("Article '%s' could not be read from the filesystem", articleRoute)
 			return nil
 		}
 		article.Markdown = string(bytes)
 
 		doc, err := parseDocument(bytes)
 		if err != nil {
-			article.Error = err
+			article.Err = err
 			return nil
 		}
 
@@ -72,7 +72,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			if pin == "true" || pin == "false" {
 				article.Pinned, _ = strconv.ParseBool(pin)
 			} else {
-				article.Error = errors.New("article property 'Pinned' must be true or false")
+				article.Err = errors.New("article property 'Pinned' must be true or false")
 			}
 		}
 
@@ -80,7 +80,7 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 
 		html, err := doc.GenerateHTML()
 		if err != nil {
-			article.Error = err
+			article.Err = err
 			return nil
 		}
 		article.HTML = html
@@ -108,10 +108,10 @@ func scanArticles(articleMap *ArticleMap, articlesPath string) {
 		articleMap.Articles = articles
 	}
 	for _, article := range articles {
-		if article.Error == nil {
+		if article.Err == nil {
 			log.Printf("✅ %s\n", article.Route)
 		} else {
-			log.Printf("❌ %s: %s\n", article.Route, article.Error.Error())
+			log.Printf("❌ %s: %s\n", article.Route, article.Err.Error())
 		}
 	}
 }

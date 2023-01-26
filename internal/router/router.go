@@ -3,51 +3,49 @@ package router
 import (
 	_ "embed"
 	"net/http"
-	"path"
-	"sync"
 
 	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/middleware"
 	"github.com/toddgaunt/bastion/internal/articles"
+	"github.com/toddgaunt/bastion/internal/log"
 )
 
 type contextKey string
 
 // Config contains all configuration for a bastion server's router.
 type Config struct {
-	Name         string `json:"name"`
-	Description  string `json:"description"`
-	Style        string `json:"style"`
-	ScanInterval int    `json:"scan_interval"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+	Style       string `json:"style"`
 }
 
 // New creates a new router for a bastion website.
-func New(prefixDir string, config Config) (chi.Router, error) {
-	dir := path.Clean(prefixDir)
+func New(staticFileServer http.Handler, articles *articles.ArticleMap, config Config) (chi.Router, error) {
 	r := chi.NewRouter()
+	logger := log.New()
 
-	var done chan bool
-	var wg = &sync.WaitGroup{}
-
-	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
-	articles := articles.IntervalScan(dir+"/articles", config.ScanInterval, done, wg)
+	r.Use(middleware.RequestID)
+	r.Use(middleware.Logger)
+	r.Use(log.Middleware(logger))
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", GetIndex(indexTemplate, config, articles))
-		r.With(ArticlesCtx).Get("/*", GetArticle(articleTemplate, config, articles))
+		r.Get("/", Handler(GetIndex(indexTemplate, config, articles)))
+		r.With(ArticlesCtx).Get("/*", Handler(GetArticle(articleTemplate, config, articles)))
 	})
 
 	r.Route("/"+ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(ProblemsCtx)
-			r.Get("/", GetProblem(problemTemplate, config, articles))
+			r.Get("/", Handler(GetProblem(problemTemplate, config, articles)))
 		})
 	})
 
 	r.Handle("/.static/*", http.StripPrefix("/.static/", staticFileServer))
 
-	// Closing this channel signals all worker threads to stop and cleanup.
-	//close(done)
-	//wg.Wait()
+	r.Route("/.auth", func(r chi.Router) {
+		r.Get("/refresh", Handler(Refresh))
+		r.Post("/token", Handler(Token))
+	})
 
 	return r, nil
 }

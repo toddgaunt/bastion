@@ -12,7 +12,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/toddgaunt/bastion/internal/articles"
-	"github.com/toddgaunt/bastion/internal/httpjson"
+	"github.com/toddgaunt/bastion/internal/errors"
 )
 
 const articlesCtxKey = contextKey("articleID")
@@ -31,34 +31,36 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) {
-	f := func(w http.ResponseWriter, r *http.Request) *httpjson.Problem {
+func GetArticle(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
+	const op = "GetArticle"
+	return func(w http.ResponseWriter, r *http.Request) error {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
 		// The critical section is wrapped within a closure so defer can be
 		// used for the mutex operations.
 		var markdown string
 		var vars templateVariables
-		var getArticle = func(articleKey string) *httpjson.Problem {
+		var getArticle = func(articleKey string) error {
 			articleMap.Mutex.RLock()
 			defer articleMap.Mutex.RUnlock()
 
 			article, ok := articleMap.Articles[articleKey]
 
 			if !ok {
-				return &httpjson.Problem{
-					Title:  "No Such Article",
-					Status: http.StatusNotFound,
-					Detail: fmt.Sprintf("Article %s does not exist", articleKey),
-				}
+				return errors.Annotate{
+					WithOp:     op,
+					WithTitle:  "Article Not Found",
+					WithStatus: http.StatusNotFound,
+					WithDetail: fmt.Sprintf("No article located at %s", articleKey),
+				}.Wrap(errors.New("article not in map"))
 			}
 
-			if article.Error != nil {
-				return &httpjson.Problem{
-					Title:  "Article Generation Error",
-					Status: http.StatusNotImplemented,
-					Detail: article.Error.Error(),
-				}
+			if article.Err != nil {
+				return errors.Annotate{
+					WithOp:     op,
+					WithTitle:  "Article Generation Error",
+					WithStatus: http.StatusInternalServerError,
+				}.Wrap(article.Err)
 			}
 
 			markdown = article.Markdown
@@ -74,16 +76,16 @@ func GetArticle(tmpl *template.Template, config Config, articleMap *articles.Art
 		}
 
 		if strings.HasSuffix(articleID, ".md") {
-			problem := getArticle(strings.TrimSuffix(articleID, ".md"))
-			if problem != nil {
-				return problem
+			err := getArticle(strings.TrimSuffix(articleID, ".md"))
+			if err != nil {
+				return err
 			}
 			w.Header().Add("Content-Type", "text")
 			w.Write([]byte(markdown))
 		} else {
-			problem := getArticle(articleID)
-			if problem != nil {
-				return problem
+			err := getArticle(articleID)
+			if err != nil {
+				return err
 			}
 			buf := &bytes.Buffer{}
 			tmpl.Execute(buf, vars)
@@ -94,6 +96,4 @@ func GetArticle(tmpl *template.Template, config Config, articleMap *articles.Art
 
 		return nil
 	}
-
-	return ProblemHandler(f)
 }

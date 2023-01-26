@@ -1,11 +1,11 @@
 package auth_test
 
 import (
-	"errors"
 	"testing"
 	"time"
 
 	"github.com/toddgaunt/bastion/internal/auth"
+	"github.com/toddgaunt/bastion/internal/errors"
 )
 
 // testKey was generated with auth.GenerateKey
@@ -40,7 +40,7 @@ func TestAuthenticationTokenIsValid(t *testing.T) {
 	for _, tc := range testcases {
 		var tc = tc
 		t.Run(tc.name, func(t *testing.T) {
-			if got := tc.token.IsValid(time.Now()); got != tc.want {
+			if got := tc.token.IsExpired(time.Now()); got != tc.want {
 				t.Fatalf("got = %v, want %v", got, tc.want)
 			}
 		})
@@ -58,8 +58,8 @@ func TestEncrypt(t *testing.T) {
 		{
 			name: "Success",
 			claims: auth.Claims{
-				UserID: "Lord Jim",
-				Expiry: time.Unix(20, 0).Unix(),
+				Username: "Lord Jim",
+				Expiry:   time.Unix(20, 0).Unix(),
 			},
 			key: testKey,
 
@@ -99,8 +99,8 @@ func TestDecrypt(t *testing.T) {
 			key:   testKey,
 
 			want: auth.Claims{
-				UserID: "Lord Jim",
-				Expiry: time.Unix(20, 0).Unix(),
+				Username: "Lord Jim",
+				Expiry:   time.Unix(20, 0).Unix(),
 			},
 			err: nil,
 		},
@@ -118,7 +118,7 @@ func TestDecrypt(t *testing.T) {
 			key:   testKey,
 
 			want: auth.Claims{},
-			err:  auth.ErrJWTDecodeBytes,
+			err:  auth.ErrJWTDecode,
 		},
 	}
 
@@ -148,8 +148,8 @@ func TestSign(t *testing.T) {
 		{
 			name: "Success",
 			claims: auth.Claims{
-				UserID: "samwise",
-				Expiry: time.Unix(20, 0).Unix(),
+				Username: "samwise",
+				Expiry:   time.Unix(20, 0).Unix(),
 			},
 			key: testKey,
 
@@ -188,8 +188,8 @@ func TestVerify(t *testing.T) {
 			key:   testKey,
 
 			want: auth.Claims{
-				UserID: "samwise",
-				Expiry: time.Unix(20, 0).Unix(),
+				Username: "samwise",
+				Expiry:   time.Unix(20, 0).Unix(),
 			},
 			succeeds: true,
 		},
@@ -228,8 +228,8 @@ func TestVerify(t *testing.T) {
 
 func TestEncryptAndDecrypt(t *testing.T) {
 	claims := auth.Claims{
-		UserID: "frodo.baggins",
-		Expiry: time.Unix(20, 0).Unix(),
+		Username: "frodo.baggins",
+		Expiry:   time.Unix(20, 0).Unix(),
 	}
 
 	token, err := auth.Encrypt(claims, testKey)
@@ -249,8 +249,8 @@ func TestEncryptAndDecrypt(t *testing.T) {
 
 func TestSignAndVerify(t *testing.T) {
 	claims := auth.Claims{
-		UserID: "samwise.gamgee",
-		Expiry: time.Unix(20, 0).Unix(),
+		Username: "samwise.gamgee",
+		Expiry:   time.Unix(20, 0).Unix(),
 	}
 
 	token, err := auth.Sign(claims, testKey)

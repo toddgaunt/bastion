@@ -20,11 +20,11 @@ package main
 import "github.com/toddgaunt/bastion/internal/router"
 
 var DefaultConfig = Config{
+	ScanInterval: 60,
 	Content: router.Config{
-		Name:         "Example",
-		Description:  "This is a simple example website",
-		Style:        "default",
-		ScanInterval: 60,
+		Name:        "Example",
+		Description: "This is a simple example website",
+		Style:       "default",
 	},
 	Network: ConfigNetwork{
 		Port: 8080,
@@ -52,6 +52,7 @@ type ConfigTLS struct {
 
 // Config contains all website configuration options for a Monastery website
 type Config struct {
-	Content router.Config `json:"content"`
-	Network ConfigNetwork `json:"network"`
+	ScanInterval int           `json:"scan_interval"`
+	Content      router.Config `json:"content"`
+	Network      ConfigNetwork `json:"network"`
 }

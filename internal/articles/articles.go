@@ -23,7 +23,7 @@ type Article struct {
 
 	HTML     template.HTML
 	Markdown string
-	Error    error
+	Err      error
 }
 
 func (article Article) FormattedDate() string {
@@ -37,14 +37,14 @@ func (a *Article) SetTimestamps(created string, updated string) {
 	if created != "" {
 		t, err := time.Parse("2006-01-02", created)
 		if err != nil {
-			a.Error = fmt.Errorf("could not parse 'created': %w", err)
+			a.Err = fmt.Errorf("could not parse 'created': %w", err)
 		}
 		a.Created = t
 	}
 	if updated != "" {
 		t, err := time.Parse("2006-01-02", updated)
 		if err != nil {
-			a.Error = fmt.Errorf("couldn't parse 'updated': %w", err)
+			a.Err = fmt.Errorf("couldn't parse 'updated': %w", err)
 		}
 		a.Updated = t
 	}

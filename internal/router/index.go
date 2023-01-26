@@ -7,14 +7,15 @@ import (
 	"net/http"
 
 	"github.com/toddgaunt/bastion/internal/articles"
-	"github.com/toddgaunt/bastion/internal/httpjson"
+	"github.com/toddgaunt/bastion/internal/errors"
 )
 
-// GetIndex returns an HTTP handler that responds to requests with the
-// Monastery site index
-func GetIndex(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) {
+// GetIndex returns an HTTP handler that responds with the site index.
+func GetIndex(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
+	const op = errors.Op("GetIndex")
+
 	// Actions to perform for every request
-	f := func(w http.ResponseWriter, _ *http.Request) *httpjson.Problem {
+	return func(w http.ResponseWriter, _ *http.Request) error {
 		vars := templateVariables{
 			Title:       config.Name,
 			Description: config.Description,
@@ -33,6 +34,4 @@ func GetIndex(tmpl *template.Template, config Config, articleMap *articles.Artic
 
 		return nil
 	}
-
-	return ProblemHandler(f)
 }

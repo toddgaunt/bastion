@@ -8,7 +8,10 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"path"
+	"sync"
 
+	"github.com/toddgaunt/bastion/internal/articles"
 	"github.com/toddgaunt/bastion/internal/router"
 )
 
@@ -23,7 +26,14 @@ func isFlagPassed(name string) bool {
 }
 
 func Serve(prefixDir string, config Config) {
-	r, err := router.New(prefixDir, config.Content)
+	var done chan bool
+	var wg = &sync.WaitGroup{}
+
+	dir := path.Clean(prefixDir)
+	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
+	articles := articles.IntervalScan(dir+"/articles", config.ScanInterval, done, wg)
+
+	r, err := router.New(staticFileServer, articles, config.Content)
 	if err != nil {
 		log.Fatalf("couldn't create router: %v", err)
 	}
@@ -40,6 +50,10 @@ func Serve(prefixDir string, config Config) {
 		// Allow non-TLS for use until a certificate can be acquired
 		log.Fatal(http.ListenAndServe(addr, r))
 	}
+
+	// Closing this channel signals all worker threads to stop and cleanup.
+	close(done)
+	wg.Wait()
 }
 
 func main() {
