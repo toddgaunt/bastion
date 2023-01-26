@@ -6,21 +6,14 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/toddgaunt/bastion/internal/articles"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/log"
 )
 
 type contextKey string
 
-// Config contains all configuration for a bastion server's router.
-type Config struct {
-	Name        string `json:"name"`
-	Description string `json:"description"`
-	Style       string `json:"style"`
-}
-
 // New creates a new router for a bastion website.
-func New(staticFileServer http.Handler, articles *articles.ArticleMap, config Config) (chi.Router, error) {
+func New(staticFileServer http.Handler, articles *content.ArticleMap, config content.Config) (chi.Router, error) {
 	r := chi.NewRouter()
 	logger := log.New()
 

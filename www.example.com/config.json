@@ -1,13 +1,16 @@
 {
+	"scan_interval": 60
 	"content": {
 		"name": "Example",
 		"description": "This is a simple example website",
 		"style": "default",
-		"scan_interval": 60
 	},
 	"network": {
 		"port": 8080,
-		"tls-cert": "",
-		"tls-key": ""
+		"tls": {
+			"disable": true,
+			"cert": "",
+			"key": ""
+		}
 	}
 }

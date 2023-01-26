@@ -93,11 +93,9 @@ type Annotate struct {
 	WithDetail string
 }
 
+// Wrap annotates err with the values present in the annotation.
 func (a Annotate) Wrap(err error) error {
-	return annotatedError{
-		Annotate: a,
-		err:      err,
-	}
+	return annotatedError{a, err}
 }
 
 type annotatedError struct {
@@ -195,8 +193,3 @@ func (e annotatedError) Is(target error) bool {
 
 	return false
 }
-
-// Annotate creates a new error that can be annotated with methods.
-//func Annotate(err error) Error {
-//return Error{err: err}
-//}

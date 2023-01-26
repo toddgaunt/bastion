@@ -5,15 +5,15 @@ import (
 	"html/template"
 	"sort"
 
-	"github.com/toddgaunt/bastion/internal/articles"
+	"github.com/toddgaunt/bastion/internal/content"
 )
 
 type templateVariables struct {
 	Title       string
 	Description string
-	Site        Config
+	Site        content.Config
 	HTML        template.HTML
-	ArticleMap  *articles.ArticleMap
+	ArticleMap  *content.ArticleMap
 }
 
 // Pinned creates a mapping of pinned article titles to their route
@@ -33,11 +33,11 @@ func (vars templateVariables) Pinned() map[string]string {
 }
 
 // SortedIndex creates a index of articles sorted by title and created time.
-func (vars templateVariables) SortedIndex() []*articles.Article {
+func (vars templateVariables) SortedIndex() []*content.Article {
 	vars.ArticleMap.Mutex.RLock()
 	defer vars.ArticleMap.Mutex.RUnlock()
 
-	var sorted []*articles.Article
+	var sorted []*content.Article
 	// Created a list of nested articles sorted by date
 	for _, v := range vars.ArticleMap.Articles {
 		// Only add unpinned articles to the index

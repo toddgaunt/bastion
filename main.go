@@ -11,7 +11,7 @@ import (
 	"path"
 	"sync"
 
-	"github.com/toddgaunt/bastion/internal/articles"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/router"
 )
 
@@ -31,7 +31,7 @@ func Serve(prefixDir string, config Config) {
 
 	dir := path.Clean(prefixDir)
 	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
-	articles := articles.IntervalScan(dir+"/articles", config.ScanInterval, done, wg)
+	articles := content.IntervalScan(dir+"/articles", config.Content.ScanInterval, done, wg)
 
 	r, err := router.New(staticFileServer, articles, config.Content)
 	if err != nil {

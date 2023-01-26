@@ -6,12 +6,12 @@ import (
 	"html/template"
 	"net/http"
 
-	"github.com/toddgaunt/bastion/internal/articles"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
 // GetIndex returns an HTTP handler that responds with the site index.
-func GetIndex(tmpl *template.Template, config Config, articleMap *articles.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
+func GetIndex(tmpl *template.Template, config content.Config, articleMap *content.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
 	const op = errors.Op("GetIndex")
 
 	// Actions to perform for every request
