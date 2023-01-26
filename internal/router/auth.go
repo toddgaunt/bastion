@@ -16,14 +16,14 @@ var RefreshTokensMutex = sync.Mutex{}
 var RefreshTokens = make(map[auth.BearerToken]auth.Claims)
 
 func ErrUnauthorized(err error) error {
-	return errors.Annotate{
+	return errors.Annotation{
 		WithOp:     "Auth",
 		WithStatus: http.StatusUnauthorized,
 	}.Wrap(err)
 }
 
 func ErrAuthenticate(err error) error {
-	return errors.Annotate{
+	return errors.Annotation{
 		WithOp:     "Auth",
 		WithStatus: http.StatusInternalServerError,
 		WithDetail: "failed to authenticate",
@@ -96,7 +96,7 @@ func Token(w http.ResponseWriter, r *http.Request) error {
 	}()
 
 	if !ok {
-		return errors.Annotate{
+		return errors.Annotation{
 			WithOp:     "Auth",
 			WithStatus: http.StatusUnauthorized,
 			WithDetail: "invalid refresh token",
@@ -108,7 +108,7 @@ func Token(w http.ResponseWriter, r *http.Request) error {
 	}
 
 	if claims.IsExpired(time.Now()) {
-		return errors.Annotate{
+		return errors.Annotation{
 			WithOp:     "Auth",
 			WithStatus: http.StatusUnauthorized,
 			WithDetail: "invalid refresh token",

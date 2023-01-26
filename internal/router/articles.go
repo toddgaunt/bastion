@@ -47,7 +47,7 @@ func GetArticle(tmpl *template.Template, config content.Config, articleMap *cont
 			article, ok := articleMap.Articles[articleKey]
 
 			if !ok {
-				return errors.Annotate{
+				return errors.Annotation{
 					WithOp:     op,
 					WithTitle:  "Article Not Found",
 					WithStatus: http.StatusNotFound,
@@ -56,7 +56,7 @@ func GetArticle(tmpl *template.Template, config content.Config, articleMap *cont
 			}
 
 			if article.Err != nil {
-				return errors.Annotate{
+				return errors.Annotation{
 					WithOp:     op,
 					WithTitle:  "Article Generation Error",
 					WithStatus: http.StatusInternalServerError,

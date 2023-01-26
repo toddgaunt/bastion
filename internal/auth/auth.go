@@ -60,7 +60,7 @@ func Encrypt(claims Claims, key SymmetricKey) (JWT, error) {
 func Decrypt(token JWT, key SymmetricKey) (Claims, error) {
 	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
-		return Claims{}, errors.Annotate{
+		return Claims{}, errors.Annotation{
 			WithType:   ErrJWTDecode,
 			WithDetail: "failed to decrypt token",
 		}.Wrap(err)
@@ -69,7 +69,7 @@ func Decrypt(token JWT, key SymmetricKey) (Claims, error) {
 	// Verify that the token was encrypted using the right algorithm.
 	algo, ok := JWTHeader["enc"].(string)
 	if !ok || algo != cryptAlgo {
-		return Claims{}, errors.Annotate{
+		return Claims{}, errors.Annotation{
 			WithType:   ErrJWTBadAlgo,
 			WithDetail: fmt.Sprintf("only the the %s encryption algorithm is supported", cryptAlgo),
 		}.Wrap(errors.Errorf("unsupported algorithm %s", algo))
@@ -100,7 +100,7 @@ func Sign(claims Claims, key SymmetricKey) (JWT, error) {
 func Verify(token JWT, key SymmetricKey) (Claims, error) {
 	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
-		return Claims{}, errors.Annotate{
+		return Claims{}, errors.Annotation{
 			WithType: ErrJWTDecode,
 		}.Wrap(err)
 	}
@@ -108,7 +108,7 @@ func Verify(token JWT, key SymmetricKey) (Claims, error) {
 	// Verify that the token was signed using the right algorithm.
 	algo, ok := JWTHeader["alg"].(string)
 	if !ok || algo != signAlgo {
-		return Claims{}, errors.Annotate{
+		return Claims{}, errors.Annotation{
 			WithType:   ErrJWTBadAlgo,
 			WithDetail: fmt.Sprintf("only the the %s signature algorithm is supported", signAlgo),
 		}.Wrap(errors.Errorf("unsupported algorithm %s", algo))

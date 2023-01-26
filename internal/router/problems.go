@@ -44,7 +44,7 @@ func GetProblem(tmpl *template.Template, config content.Config, articles *conten
 		case "internal-server-error":
 			description = `The server experienced an error which was no fault of the client`
 		default:
-			return errors.Annotate{
+			return errors.Annotation{
 				WithOp:     op,
 				WithStatus: http.StatusNotFound,
 				WithDetail: fmt.Sprintf("Documenation for %s is not available", problemID),

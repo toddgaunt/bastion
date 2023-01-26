@@ -84,8 +84,8 @@ var Unwrap = errors.Unwrap
 // a synonym for %v.
 var Errorf = fmt.Errorf
 
-// Annotate is a struct that can be filled with parameters to decorate an error.
-type Annotate struct {
+// Annotation is a set of fields that can be filled to wrap an error with.
+type Annotation struct {
 	WithOp     Op
 	WithType   Type
 	WithTitle  Title
@@ -94,12 +94,12 @@ type Annotate struct {
 }
 
 // Wrap annotates err with the values present in the annotation.
-func (a Annotate) Wrap(err error) error {
+func (a Annotation) Wrap(err error) error {
 	return annotatedError{a, err}
 }
 
 type annotatedError struct {
-	Annotate
+	Annotation
 	err error
 }
 
