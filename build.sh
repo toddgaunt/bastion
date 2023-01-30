@@ -45,7 +45,7 @@ function require() {
 
 function build() {
 	log "🔨 building…"
-	go build
+	go build ./cmd/bastion
 }
 
 function clean() {

@@ -6,30 +6,26 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
-	"github.com/toddgaunt/bastion/internal/content"
-	"github.com/toddgaunt/bastion/internal/log"
+	"github.com/toddgaunt/bastion"
 )
 
-type contextKey string
-
 // New creates a new router for a bastion website.
-func New(staticFileServer http.Handler, articles *content.ArticleMap, config content.Config) (chi.Router, error) {
+func New(staticFileServer http.Handler, content bastion.Content, logger bastion.Logger) (chi.Router, error) {
 	r := chi.NewRouter()
-	logger := log.New()
 
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
-	r.Use(log.Middleware(logger))
+	r.Use(middleware.WithValue(logKey, logger))
 
 	r.Route("/", func(r chi.Router) {
-		r.Get("/", Handler(GetIndex(indexTemplate, config, articles)))
-		r.With(ArticlesCtx).Get("/*", Handler(GetArticle(articleTemplate, config, articles)))
+		r.Get("/", Handler(GetIndex(indexTemplate, content)))
+		r.With(ArticlesCtx).Get("/*", Handler(GetArticle(articleTemplate, content)))
 	})
 
 	r.Route("/"+ProblemPath, func(r chi.Router) {
 		r.Route("/{problemID}", func(r chi.Router) {
 			r.Use(ProblemsCtx)
-			r.Get("/", Handler(GetProblem(problemTemplate, config, articles)))
+			r.Get("/", Handler(GetProblem(problemTemplate, content)))
 		})
 	})
 

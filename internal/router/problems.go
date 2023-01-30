@@ -8,7 +8,7 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -28,7 +28,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 
 // GetProblem is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
-func GetProblem(tmpl *template.Template, config content.Config, articles *content.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
+func GetProblem(tmpl *template.Template, content bastion.Content) func(w http.ResponseWriter, r *http.Request) error {
 	const op = "GetProblem"
 
 	return func(w http.ResponseWriter, r *http.Request) error {
@@ -54,8 +54,7 @@ func GetProblem(tmpl *template.Template, config content.Config, articles *conten
 		vars := templateVariables{
 			Title:       problemID,
 			Description: description,
-			Site:        config,
-			ArticleMap:  articles,
+			content:     content,
 		}
 
 		buf := &bytes.Buffer{}

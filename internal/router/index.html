@@ -3,24 +3,24 @@
 	<head>
 		<title>{{.Title}}</title>
 		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+		<link href="/.static/styles/{{.Details.Style}}.css" type="text/css" rel="stylesheet">
 	</head>
 	<body>
 		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Pinned}}
-			<a href="{{$route}}">{{$name}}</a>
+			<a href="/">{{.Details.Name}}</a>
+			{{range $k, $v := .Pinned}}
+			<a href="{{$v.Route}}">{{$v.Title}}</a>
 			{{end}}
 		</div>
 		<div class="content">
 			<article>
 				<div class="article-header">
-					<h1 class="article-title">{{.Site.Name}}</h1>
-					<p class="article-description">{{.Site.Description}}</p>
+					<h1 class="article-title">{{.Details.Name}}</h1>
+					<p class="article-description">{{.Details.Description}}</p>
 				</div>
 				<div class="article-body">
 					<ul>
-						{{range $k, $v := .SortedIndex}}
+						{{range $k, $v := .Index}}
 						<li><a href="{{$v.Route}}">{{$v.FormattedDate}} - {{$v.Title}}</a></li>
 						{{end}}
 					</ul>

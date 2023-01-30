@@ -1,15 +1,27 @@
-package content
+package bastion
 
 import (
 	"fmt"
 	"html/template"
-	"sync"
 	"time"
 )
 
-type ArticleMap struct {
-	Mutex    sync.RWMutex
-	Articles map[string]*Article
+type Logger interface {
+	Info(args ...any)
+	Warn(args ...any)
+	Error(args ...any)
+	Fatal(args ...any)
+	Infow(msg string, keyValues ...any)
+	Warnw(msg string, keyValues ...any)
+	Errorw(msg string, keyValues ...any)
+	Fatalw(msg string, keyValues ...any)
+	With(keyValues ...any) Logger
+}
+
+type Details struct {
+	Name        string
+	Description string
+	Style       string
 }
 
 type Article struct {
@@ -30,9 +42,6 @@ func (article Article) FormattedDate() string {
 	return article.Created.Format("2006-01-02")
 }
 
-// SetTimestamps will set the provided timestamp strings, if not empty, in the
-// article. If they fail to be parsed as timestamps, the article's problem
-// field is set with a relevant ProblemJSON object.
 func (a *Article) SetTimestamps(created string, updated string) {
 	if created != "" {
 		t, err := time.Parse("2006-01-02", created)
@@ -48,4 +57,10 @@ func (a *Article) SetTimestamps(created string, updated string) {
 		}
 		a.Updated = t
 	}
+}
+
+type Content interface {
+	Get(key string) (Article, bool)
+	GetAll(pinned bool) []Article
+	Details() Details
 }

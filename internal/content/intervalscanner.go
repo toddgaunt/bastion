@@ -4,30 +4,76 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/toddgaunt/bastion"
 )
+
+type IntervalScanner struct {
+	ScanInterval int
+	Logger       bastion.Logger
+	WithDetails  bastion.Details
+
+	mutex      sync.RWMutex
+	articleMap map[string]bastion.Article
+}
+
+func (m *IntervalScanner) Get(key string) (bastion.Article, bool) {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	article, ok := m.articleMap[key]
+	return article, ok
+}
+
+func (m *IntervalScanner) GetAll(pinned bool) []bastion.Article {
+	m.mutex.RLock()
+	defer m.mutex.RUnlock()
+
+	list := []bastion.Article{}
+	for _, v := range m.articleMap {
+		// Only add pinned articles to the list
+		if v.Pinned == pinned {
+			list = append(list, v)
+		}
+	}
+
+	sort.Slice(list, func(i int, j int) bool {
+		return list[i].Title < list[j].Title
+	})
+
+	sort.Slice(list, func(i int, j int) bool {
+		return list[i].Created.After(list[j].Created)
+	})
+
+	return list
+}
+
+func (m *IntervalScanner) Details() bastion.Details {
+	return m.WithDetails
+}
 
 // generateArticles walks a directory, and generates articles from
 // subdirectories and markdown files found.
-func generateArticles(contentPath string) (map[string]*Article, error) {
-	articles := make(map[string]*Article)
+func generateArticles(dirpath string) (map[string]bastion.Article, error) {
+	articles := make(map[string]bastion.Article)
 
-	err := filepath.Walk(contentPath, func(articlePath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dirpath, func(articlePath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		articleName := path.Base(articlePath)
-		articleRoute := strings.TrimPrefix(strings.TrimSuffix(articlePath, path.Ext(articlePath)), path.Clean(contentPath))
+		name := path.Base(articlePath)
+		route := strings.TrimPrefix(strings.TrimSuffix(articlePath, path.Ext(articlePath)), path.Clean(dirpath))
 
-		if strings.HasPrefix(articleName, ".") {
+		if strings.HasPrefix(name, ".") {
 			// Skip "hidden" files and directories, since '.' is reserved for built-in routes
 			if info.IsDir() {
 				return filepath.SkipDir
@@ -40,19 +86,19 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 			return nil
 		}
 
-		article := &Article{Route: articleRoute}
+		article := bastion.Article{Route: route}
 
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
 		defer func() {
 			if article.Err != nil || article.HTML != "" {
-				articles[articleRoute] = article
+				articles[route] = article
 			}
 		}()
 
 		bytes, err := ioutil.ReadFile(articlePath)
 		if err != nil {
-			article.Err = fmt.Errorf("Article '%s' could not be read from the filesystem", articleRoute)
+			article.Err = fmt.Errorf("article '%s' could not be read from the filesystem", route)
 			return nil
 		}
 		article.Markdown = string(bytes)
@@ -95,34 +141,39 @@ func generateArticles(contentPath string) (map[string]*Article, error) {
 	return articles, nil
 }
 
-// scanArticles updates the articleMap based on whats found in the directory at
+// Scan updates the articleMap based on whats found in the directory at
 // articlesPath.
-func scanArticles(articleMap *ArticleMap, articlesPath string) {
-	articleMap.Mutex.Lock()
-	defer articleMap.Mutex.Unlock()
+func (s *IntervalScanner) ScanArticles(articlesPath string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
 
 	articles, err := generateArticles(articlesPath)
 	if err != nil {
-		log.Print(err.Error())
+		s.Logger.Error(err.Error())
 	} else {
-		articleMap.Articles = articles
+		s.articleMap = articles
 	}
 	for _, article := range articles {
 		if article.Err == nil {
-			log.Printf("✅ %s\n", article.Route)
+			s.Logger.Infow("scan",
+				"status", "ok",
+				"route", article.Route,
+			)
 		} else {
-			log.Printf("❌ %s: %s\n", article.Route, article.Err.Error())
+			s.Logger.Infow("scan",
+				"status", "fail",
+				"route", article.Route,
+				"err", article.Err.Error(),
+			)
 		}
 	}
 }
 
-// IntervalScan scans for articles every scanInterval seconds. If scanInterval
-// is 0, then a scan is only performed once at startup.
-func IntervalScan(articlesPath string, scanInterval int, done chan bool, wg *sync.WaitGroup) *ArticleMap {
-	articleMap := &ArticleMap{}
-
-	if scanInterval == 0 {
-		log.Printf("scan_interval is 0, articles will only be scanned once")
+// Start starts a goroutine to scan for articles every s.ScanInterval seconds.
+// If s.ScanInterval is 0, then a scan is only performed once at startup.
+func (s *IntervalScanner) Start(articlesPath string, done chan bool, wg *sync.WaitGroup) {
+	if s.ScanInterval == 0 {
+		s.Logger.Warn("scan_interval is 0, articles will only be scanned once")
 	}
 
 	wg.Add(1)
@@ -133,16 +184,13 @@ func IntervalScan(articlesPath string, scanInterval int, done chan bool, wg *syn
 			case <-done:
 				break loop
 			default:
-				log.Print("🔍 scanning content")
-				scanArticles(articleMap, articlesPath)
-				if scanInterval == 0 {
+				s.ScanArticles(articlesPath)
+				if s.ScanInterval == 0 {
 					break loop
 				}
-				time.Sleep(time.Duration(scanInterval) * time.Second)
+				time.Sleep(time.Duration(s.ScanInterval) * time.Second)
 			}
 		}
 		wg.Done()
 	}()
-
-	return articleMap
 }

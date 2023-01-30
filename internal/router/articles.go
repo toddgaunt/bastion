@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -31,7 +31,7 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(tmpl *template.Template, config content.Config, articleMap *content.ArticleMap) func(w http.ResponseWriter, r *http.Request) error {
+func GetArticle(tmpl *template.Template, content bastion.Content) func(w http.ResponseWriter, r *http.Request) error {
 	const op = "GetArticle"
 	return func(w http.ResponseWriter, r *http.Request) error {
 		articleID := r.Context().Value(articlesCtxKey).(string)
@@ -41,10 +41,7 @@ func GetArticle(tmpl *template.Template, config content.Config, articleMap *cont
 		var markdown string
 		var vars templateVariables
 		var getArticle = func(articleKey string) error {
-			articleMap.Mutex.RLock()
-			defer articleMap.Mutex.RUnlock()
-
-			article, ok := articleMap.Articles[articleKey]
+			article, ok := content.Get(articleKey)
 
 			if !ok {
 				return errors.Annotation{
@@ -67,9 +64,8 @@ func GetArticle(tmpl *template.Template, config content.Config, articleMap *cont
 			vars = templateVariables{
 				Title:       article.Title,
 				Description: article.Description,
-				Site:        config,
-				ArticleMap:  articleMap,
 				HTML:        article.HTML,
+				content:     content,
 			}
 
 			return nil

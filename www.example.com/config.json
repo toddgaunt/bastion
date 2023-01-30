@@ -1,9 +1,19 @@
 {
-	"scan_interval": 60
 	"content": {
 		"name": "Example",
 		"description": "This is a simple example website",
 		"style": "default",
+		"scan_interval": 60
+	},
+	"credentials": {
+		"username": {
+			"location": "env",
+			"value": "BASTION_USERNAME"
+		},
+		"password": {
+			"location": "env",
+			"value": "BASTION_PASSWORD"
+		}
 	},
 	"network": {
 		"port": 8080,

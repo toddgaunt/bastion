@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi/middleware"
-	"github.com/toddgaunt/bastion/internal/log"
 )
 
 // Problem represents server errors in JSON, defined by IETF RFC 7807.
@@ -22,7 +21,8 @@ type Problem struct {
 func Handler(handlerFunc func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
-		logger := log.From(ctx)
+
+		logger := logFromContext(r.Context())
 		logger = logger.With("request_id", middleware.GetReqID(ctx))
 
 		err := handlerFunc(w, r)

@@ -3,13 +3,13 @@
 	<head>
 		<title>{{.Title}}</title>
 		<meta name="description" content="{{.Description}}">
-		<link href="/.static/styles/{{.Site.Style}}.css" type="text/css" rel="stylesheet">
+		<link href="/.static/styles/{{.Details.Style}}.css" type="text/css" rel="stylesheet">
 	</head>
 	<body>
 		<div class="site-navigation">
-			<a href="/">{{.Site.Name}}</a>
-			{{range $name, $route := .Pinned}}
-			<a href="{{$route}}">{{$name}}</a>
+			<a href="/">{{.Details.Name}}</a>
+			{{range $k, $v := .Pinned}}
+			<a href="{{$v.Route}}">{{$v.Title}}</a>
 			{{end}}
 		</div>
 		<div class="content">

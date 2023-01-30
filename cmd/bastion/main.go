@@ -5,13 +5,14 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path"
 	"sync"
 
+	"github.com/toddgaunt/bastion"
 	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/log"
 	"github.com/toddgaunt/bastion/internal/router"
 )
 
@@ -25,30 +26,45 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func Serve(prefixDir string, config Config) {
+func serve(prefixDir string, config configServer) {
 	var done chan bool
 	var wg = &sync.WaitGroup{}
 
+	logger := log.New()
+
 	dir := path.Clean(prefixDir)
 	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
-	articles := content.IntervalScan(dir+"/articles", config.Content.ScanInterval, done, wg)
 
-	r, err := router.New(staticFileServer, articles, config.Content)
+	details := bastion.Details{
+		Name:        config.Content.Name,
+		Description: config.Content.Description,
+		Style:       config.Content.Style,
+	}
+
+	scanner := &content.IntervalScanner{
+		ScanInterval: config.Content.ScanInterval,
+		Logger:       logger,
+		WithDetails:  details,
+	}
+
+	scanner.Start(dir+"/articles", done, wg)
+
+	r, err := router.New(staticFileServer, scanner, logger)
 	if err != nil {
-		log.Fatalf("couldn't create router: %v", err)
+		logger.Fatal("couldn't create router: ", err.Error())
 	}
 
 	addr := fmt.Sprintf(":%d", config.Network.Port)
 
-	log.Printf("Serving on port %d\n", config.Network.Port)
+	logger.Info(fmt.Sprintf("Serving on port %d\n", config.Network.Port))
 
 	if !config.Network.TLS.Disable && (config.Network.TLS.Cert != "" && config.Network.TLS.Key != "") {
 		// TLS can be used
-		log.Fatal(http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
+		logger.Fatal(http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
 	} else {
-		log.Print("Warning: not using TLS")
+		logger.Warn("TLS is disabled")
 		// Allow non-TLS for use until a certificate can be acquired
-		log.Fatal(http.ListenAndServe(addr, r))
+		logger.Fatal(http.ListenAndServe(addr, r))
 	}
 
 	// Closing this channel signals all worker threads to stop and cleanup.
@@ -71,10 +87,12 @@ func main() {
 
 	flag.Parse()
 
+	logger := log.New()
+
 	if exampleConfig {
 		bytes, err := json.MarshalIndent(DefaultConfig, "", "\t")
 		if err != nil {
-			log.Fatalln(err)
+			logger.Fatal(err.Error())
 		}
 		fmt.Println(string(bytes))
 		os.Exit(0)
@@ -87,17 +105,19 @@ func main() {
 		prefixDir = args[0]
 	}
 
-	var config Config
+	var config configServer
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	if err != nil {
-		log.Fatalf("couldn't load config: %v", err)
+		logger.Fatal("couldn't load config: ", err.Error())
 	}
 
 	if err := json.Unmarshal(data, &config); err != nil {
-		log.Fatalf("couldn't load config: %v", err)
+		logger.Fatal("couldn't load config: ", err.Error())
 	}
 
-	// Only flags that are explicitly provided from commandline can be visited
+	// Only flags that are explicitly set from commandline can be visited, so
+	// this will skip any that weren't provided and preserve the values from
+	// the config file.
 	flag.Visit(func(f *flag.Flag) {
 		switch f.Name {
 		case "port":
@@ -112,5 +132,5 @@ func main() {
 	})
 
 	// Start the server
-	Serve(prefixDir, config)
+	serve(prefixDir, config)
 }
