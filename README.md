@@ -1,6 +1,7 @@
 # Bastion
 
 [![Go](https://github.com/toddgaunt/bastion/actions/workflows/go.yml/badge.svg)](https://github.com/toddgaunt/bastion/actions/workflows/go.yml)
+[![Go Reference](https://pkg.go.dev/badge/github.com/toddgaunt/bastion.svg)](https://pkg.go.dev/github.com/toddgaunt/bastion)
 
 Bastion is a simple webserver for serving articles written in markdown. These markdown
 articles are converted to html automatically as they are updated, and have a special
