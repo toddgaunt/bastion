@@ -6,6 +6,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/toddgaunt/bastion"
 	"github.com/toddgaunt/bastion/internal/auth"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
@@ -17,14 +18,12 @@ var RefreshTokens = make(map[auth.BearerToken]auth.Claims)
 
 func ErrUnauthorized(err error) error {
 	return errors.Annotation{
-		WithOp:     "Auth",
 		WithStatus: http.StatusUnauthorized,
 	}.Wrap(err)
 }
 
 func ErrAuthenticate(err error) error {
 	return errors.Annotation{
-		WithOp:     "Auth",
 		WithStatus: http.StatusInternalServerError,
 		WithDetail: "failed to authenticate",
 	}.Wrap(err)
@@ -37,46 +36,48 @@ type AuthResponse struct {
 }
 
 // Refresh authenticates a user and returns to them an access token and a refresh token.
-func Refresh(w http.ResponseWriter, r *http.Request) error {
-	username, password, ok := r.BasicAuth()
-	if !ok {
-		w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
-		return ErrUnauthorized(errors.New("enter username and password"))
+func Refresh(authorizer bastion.Authorizer) func(w http.ResponseWriter, r *http.Request) error {
+	return func(w http.ResponseWriter, r *http.Request) error {
+		username, password, ok := r.BasicAuth()
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
+			return ErrUnauthorized(errors.New("enter username and password"))
+		}
+
+		claims, ok := authorizer.Authorize(username, password)
+		if !ok {
+			w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
+			return ErrUnauthorized(errors.New("invalid username and password"))
+		}
+
+		refreshToken, err := auth.NewBearerToken()
+		if err != nil {
+			return ErrAuthenticate(err)
+		}
+
+		func() {
+			RefreshTokensMutex.Lock()
+			defer RefreshTokensMutex.Unlock()
+
+			RefreshTokens[refreshToken] = auth.NewClaims(claims.Username, time.Now(), time.Hour*24)
+		}()
+
+		accessClaims := auth.NewClaims(username, time.Now(), time.Minute*5)
+		accessToken, err := auth.Sign(accessClaims, key)
+		if err != nil {
+			return ErrAuthenticate(err)
+		}
+
+		resp := AuthResponse{
+			RefreshToken: string(refreshToken),
+			AccessToken:  string(accessToken),
+		}
+
+		w.Header().Add("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		enc := json.NewEncoder(w)
+		return enc.Encode(resp)
 	}
-
-	//TODO actual authentication
-	if username != "foo" && password != "bar" {
-		w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
-		return ErrUnauthorized(errors.New("invalid username and password"))
-	}
-
-	refreshToken, err := auth.NewBearerToken()
-	if err != nil {
-		return ErrAuthenticate(err)
-	}
-
-	func() {
-		RefreshTokensMutex.Lock()
-		defer RefreshTokensMutex.Unlock()
-
-		RefreshTokens[refreshToken] = auth.NewClaims(username, time.Now(), time.Hour*24)
-	}()
-
-	accessClaims := auth.NewClaims(username, time.Now(), time.Minute*5)
-	accessToken, err := auth.Sign(accessClaims, key)
-	if err != nil {
-		return ErrAuthenticate(err)
-	}
-
-	resp := AuthResponse{
-		RefreshToken: string(refreshToken),
-		AccessToken:  string(accessToken),
-	}
-
-	w.Header().Add("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(w)
-	return enc.Encode(resp)
 }
 
 // Token accepts a refresh Token from the request and sends back a new refresh and access Token.

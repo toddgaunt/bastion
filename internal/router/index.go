@@ -11,7 +11,7 @@ import (
 )
 
 // GetIndex returns an HTTP handler that responds with the site index.
-func GetIndex(tmpl *template.Template, content bastion.Content) func(w http.ResponseWriter, r *http.Request) error {
+func GetIndex(tmpl *template.Template, content bastion.ContentStore) func(w http.ResponseWriter, r *http.Request) error {
 	const op = errors.Op("GetIndex")
 
 	// Actions to perform for every request

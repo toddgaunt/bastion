@@ -41,15 +41,29 @@ func serve(prefixDir string, config configServer) {
 		Style:       config.Content.Style,
 	}
 
-	scanner := &content.IntervalScanner{
+	contentScanner := &content.IntervalScanner{
 		ScanInterval: config.Content.ScanInterval,
 		Logger:       logger,
 		WithDetails:  details,
 	}
 
-	scanner.Start(dir+"/articles", done, wg)
+	contentScanner.Start(dir+"/articles", done, wg)
 
-	r, err := router.New(staticFileServer, scanner, logger)
+	username, err := config.Credentials.Username.Load()
+	if err != nil {
+		logger.Error(fmt.Errorf("username: %w", err))
+		return
+	}
+
+	password, err := config.Credentials.Password.Load()
+	if err != nil {
+		logger.Error(fmt.Errorf("password: %w", err))
+		return
+	}
+
+	authorizer := simpleAuthorizer{username, password}
+
+	r, err := router.New(staticFileServer, authorizer, contentScanner, logger)
 	if err != nil {
 		logger.Fatal("couldn't create router: ", err.Error())
 	}

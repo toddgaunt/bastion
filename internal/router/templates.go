@@ -11,7 +11,7 @@ type templateVariables struct {
 	Title       string
 	Description string
 	HTML        template.HTML
-	content     bastion.Content
+	content     bastion.ContentStore
 }
 
 func (vars templateVariables) Details() bastion.Details {

@@ -18,6 +18,23 @@ type Logger interface {
 	With(keyValues ...any) Logger
 }
 
+type Claims struct {
+	Username string
+	Admin    bool
+}
+
+type Authorizer interface {
+	Authorize(username, password string) (Claims, bool)
+}
+
+// ContentStore is a store for all content a bastion server needs.
+type ContentStore interface {
+	Get(key string) (Article, bool)
+	GetAll(pinned bool) []Article
+	Details() Details
+}
+
+// Details describes how to display the content.
 type Details struct {
 	Name        string
 	Description string
@@ -57,10 +74,4 @@ func (a *Article) SetTimestamps(created string, updated string) {
 		}
 		a.Updated = t
 	}
-}
-
-type Content interface {
-	Get(key string) (Article, bool)
-	GetAll(pinned bool) []Article
-	Details() Details
 }

@@ -17,9 +17,9 @@ import (
 
 const articlesCtxKey = contextKey("articleID")
 
-// ArticlesCtx is middleware for a router to provide a clean path to an article
+// ArticlePath is middleware for a router to provide a clean path to an article
 // for an HTTPHandler.
-func ArticlesCtx(next http.Handler) http.Handler {
+func ArticlePath(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		articleID := "/" + filepath.Clean(chi.URLParam(r, "*"))
 		ctx := context.WithValue(r.Context(), articlesCtxKey, articleID)
@@ -31,7 +31,7 @@ func ArticlesCtx(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(tmpl *template.Template, content bastion.Content) func(w http.ResponseWriter, r *http.Request) error {
+func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w http.ResponseWriter, r *http.Request) error {
 	const op = "GetArticle"
 	return func(w http.ResponseWriter, r *http.Request) error {
 		articleID := r.Context().Value(articlesCtxKey).(string)

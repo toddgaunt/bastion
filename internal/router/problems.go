@@ -16,9 +16,8 @@ const ProblemPath = ".problems"
 
 const problemsCtxKey = contextKey("problemID")
 
-// ProblemsCtx is a middleware that extracts the problem ID
-// from the URL of the HTTP request.
-func ProblemsCtx(next http.Handler) http.Handler {
+// ProblemID extracts the problem ID from the request URL
+func ProblemID(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		problemID := chi.URLParam(r, "problemID")
 		ctx := context.WithValue(r.Context(), problemsCtxKey, problemID)
@@ -28,7 +27,7 @@ func ProblemsCtx(next http.Handler) http.Handler {
 
 // GetProblem is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
-func GetProblem(tmpl *template.Template, content bastion.Content) func(w http.ResponseWriter, r *http.Request) error {
+func GetProblem(tmpl *template.Template, content bastion.ContentStore) func(w http.ResponseWriter, r *http.Request) error {
 	const op = "GetProblem"
 
 	return func(w http.ResponseWriter, r *http.Request) error {

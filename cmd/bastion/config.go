@@ -1,7 +1,22 @@
 package main
 
+import (
+	"os"
+
+	"github.com/toddgaunt/bastion/internal/errors"
+)
+
 var DefaultConfig = configServer{
-	//Credentials: ConfigCredentials{},
+	Credentials: configCredentials{
+		Username: configVariable{
+			Location: "env",
+			Value:    "BASTION_USERNAME",
+		},
+		Password: configVariable{
+			Location: "env",
+			Value:    "BASTION_PASSWORD",
+		},
+	},
 	Content: configContent{
 		Name:         "Example",
 		Description:  "This is a simple example website",
@@ -20,8 +35,9 @@ var DefaultConfig = configServer{
 
 // configServer is the top-level configuration object.
 type configServer struct {
-	Content configContent `json:"content"`
-	Network configNetwork `json:"network"`
+	Credentials configCredentials `json:"credentials"`
+	Content     configContent     `json:"content"`
+	Network     configNetwork     `json:"network"`
 }
 
 type configCredentials struct {
@@ -32,6 +48,17 @@ type configCredentials struct {
 type configVariable struct {
 	Location string `json:"location"`
 	Value    string `json:"value"`
+}
+
+func (v configVariable) Load() (string, error) {
+	switch v.Location {
+	case "", "literal":
+		return v.Value, nil
+	case "env":
+		return os.Getenv(v.Value), nil
+	}
+
+	return "", errors.Errorf("invalid location %q", v.Location)
 }
 
 type configContent struct {
