@@ -5,21 +5,20 @@ import (
 	_ "embed"
 	"net/http"
 
-	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
 // Index returns an HTTP handler that responds with the site index.
-func Index(store content.Store) func(w http.ResponseWriter, r *http.Request) {
+func (e Env) Index(w http.ResponseWriter, r *http.Request) {
 	const op = errors.Op("GetIndex")
 
 	// Actions to perform for every request
 	fn := func(w http.ResponseWriter, _ *http.Request) error {
-		details := store.GetDetails()
+		details := e.Store.GetDetails()
 		vars := templateVariables{
 			Title:       details.Name,
 			Description: details.Description,
-			content:     store,
+			content:     e.Store,
 		}
 
 		buf := &bytes.Buffer{}
@@ -32,5 +31,5 @@ func Index(store content.Store) func(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}
 
-	return wrapper(fn)
+	e.Wrap(fn)(w, r)
 }

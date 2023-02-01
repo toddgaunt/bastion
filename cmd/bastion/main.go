@@ -13,6 +13,7 @@ import (
 	"github.com/toddgaunt/bastion/internal/auth"
 	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/content/scanner"
+	"github.com/toddgaunt/bastion/internal/handlers"
 	"github.com/toddgaunt/bastion/internal/log"
 )
 
@@ -41,13 +42,13 @@ func serve(prefixDir string, config configServer) {
 		Style:       config.Content.Style,
 	}
 
-	contentScanner := &scanner.Scanner{
+	store := &scanner.Scanner{
 		Interval: config.Content.ScanInterval,
 		Logger:   logger,
 		Details:  details,
 	}
 
-	contentScanner.Start(dir+"/content", done, wg)
+	store.Start(dir+"/content", done, wg)
 
 	username, err := config.Credentials.Username.Load()
 	if err != nil {
@@ -66,7 +67,13 @@ func serve(prefixDir string, config configServer) {
 		Password: password,
 	}
 
-	r, err := newRouter(staticFileServer, simpleAuth, contentScanner, logger)
+	env := handlers.Env{
+		Store:  store,
+		Logger: logger,
+		Auth:   simpleAuth,
+	}
+
+	r, err := newRouter(staticFileServer, env)
 	if err != nil {
 		logger.Printf(log.Error, "couldn't create router: %v", err)
 	}

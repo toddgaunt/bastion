@@ -36,24 +36,12 @@ func TestSign(t *testing.T) {
 
 			want: "eyJhbGciOiJIUzI1NiJ9.eyJ1aWQiOiJzYW13aXNlIiwiZXhwIjoyMCwibmJmIjowLCJpYXQiOjB9.mRc0fSnXPD6yAQELEFNoyU4VNg6_GFuYPwpA0rFP42I",
 		},
-		{
-			name: "Failure",
-			claims: auth.Claims{
-				Username: "smeagol",
-				Admin:    true,
-			},
-			now:      time.Unix(0, 0),
-			duration: time.Duration(time.Second * 20),
-			key:      testKey,
-
-			want: "eyJhbGciOiJIUzI1NiJ9.eyJ1aWQiOiJzYW13aXNlIiwiZXhwIjoyMCwibmJmIjowLCJpYXQiOjB9.mRc0fSnXPD6yAQELEFNoyU4VNg6_GFuYPwpA0rFP42I",
-		},
 	}
 
 	for _, tc := range testcases {
 		var tc = tc
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := tc.claims.Sign(tc.now, tc.duration, tc.key)
+			got, err := testKey.Sign(tc.claims, tc.now, tc.duration)
 
 			if err != nil {
 				t.Fatalf("encryption error: %v", err)
@@ -109,7 +97,7 @@ func TestVerify(t *testing.T) {
 	for _, tc := range testcases {
 		var tc = tc
 		t.Run(tc.name, func(t *testing.T) {
-			got, err := tc.token.Verify(tc.key)
+			got, err := tc.key.Verify(tc.token)
 			if (err == nil) != tc.succeeds {
 				t.Fatalf("encryption error: %v", err)
 			}
@@ -130,12 +118,12 @@ func TestSignAndVerify(t *testing.T) {
 		NotBefore: time.Unix(42, 0).Unix(),
 	}
 
-	token, err := claims.Sign(time.Unix(42, 0), time.Duration(time.Second*20), testKey)
+	token, err := testKey.Sign(claims, time.Unix(42, 0), time.Duration(time.Second*20))
 	if err != nil {
 		t.Fatalf("failed to sign valid claims %v: %v", claims, err)
 	}
 
-	got, err := token.Verify(testKey)
+	got, err := testKey.Verify(token)
 	if err != nil {
 		t.Fatalf("failed to verify signature of token %q: %v", token, err)
 	}

@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -28,12 +27,12 @@ func ArticlePath(next http.Handler) http.Handler {
 	})
 }
 
-// Article returns an HTTP handler function to respond to HTTP requests for
+// Articles returns an HTTP handler function to respond to HTTP requests for
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func Articles(store content.Store) func(w http.ResponseWriter, r *http.Request) {
-	const op = "GetArticle"
+func (e Env) Articles(w http.ResponseWriter, r *http.Request) {
+	const op = "Get "
 	fn := func(w http.ResponseWriter, r *http.Request) error {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
@@ -42,7 +41,7 @@ func Articles(store content.Store) func(w http.ResponseWriter, r *http.Request) 
 		var markdown string
 		var vars templateVariables
 		var getArticle = func(articleKey string) error {
-			article, ok := store.Get(articleKey)
+			article, ok := e.Store.Get(articleKey)
 
 			if !ok {
 				return errors.Annotation{
@@ -66,7 +65,7 @@ func Articles(store content.Store) func(w http.ResponseWriter, r *http.Request) 
 				Title:       article.Title,
 				Description: article.Description,
 				HTML:        article.HTML,
-				content:     store,
+				content:     e.Store,
 			}
 
 			return nil
@@ -94,5 +93,5 @@ func Articles(store content.Store) func(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	return wrapper(fn)
+	e.Wrap(fn)(w, r)
 }

@@ -27,7 +27,7 @@ const (
 )
 
 // Sign creates a new JWT from a set of claims with the provided time and duration.
-func (claims Claims) Sign(now time.Time, lifetime time.Duration, key SymmetricKey) (JWT, error) {
+func (key SymmetricKey) Sign(claims Claims, now time.Time, lifetime time.Duration) (JWT, error) {
 	claims.IssuedAt = now.Unix()
 	claims.NotBefore = now.Unix()
 	claims.Expiry = now.Add(lifetime).Unix()
@@ -42,7 +42,7 @@ func (claims Claims) Sign(now time.Time, lifetime time.Duration, key SymmetricKe
 }
 
 // Verify checks the signature of the token with the provided key.
-func (token JWT) Verify(key SymmetricKey) (Claims, error) {
+func (key SymmetricKey) Verify(token JWT) (Claims, error) {
 	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
 		return Claims{}, errors.Annotation{

@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -24,7 +23,7 @@ func ProblemID(next http.Handler) http.Handler {
 
 // Problems is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
-func Problems(store content.Store) func(w http.ResponseWriter, r *http.Request) {
+func (e Env) Problems(w http.ResponseWriter, r *http.Request) {
 	const op = "GetProblem"
 
 	fn := func(w http.ResponseWriter, r *http.Request) error {
@@ -50,7 +49,7 @@ func Problems(store content.Store) func(w http.ResponseWriter, r *http.Request) 
 		vars := templateVariables{
 			Title:       problemID,
 			Description: description,
-			content:     store,
+			content:     e.Store,
 		}
 
 		buf := &bytes.Buffer{}
@@ -60,5 +59,5 @@ func Problems(store content.Store) func(w http.ResponseWriter, r *http.Request) 
 		return nil
 	}
 
-	return wrapper(fn)
+	e.Wrap(fn)(w, r)
 }

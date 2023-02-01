@@ -4,9 +4,18 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/go-chi/chi/middleware"
+	"github.com/toddgaunt/bastion/internal/auth"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/log"
 )
+
+// Env stores all application state that isn't request specific. All fields
+// must be safe for concurrent use.
+type Env struct {
+	Auth   auth.Authenticator
+	Store  content.Store
+	Logger log.Logger
+}
 
 // Problem represents server errors in JSON, defined by IETF RFC 7807.
 type Problem struct {
@@ -17,19 +26,16 @@ type Problem struct {
 	Instance string `json:"instance,omitempty"`
 }
 
-// wrapper wraps an HTTP handler that returns a httpjson.Problem so it
+// Wrap wraps an HTTP handler that returns a httpjson.Problem so it
 // can be logged and written to a user after a handler returns it
-func wrapper(handlerFunc func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) {
+func (e Env) Wrap(handlerFunc func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-
-		logger := log.From(r.Context())
-		logger = logger.With("request_id", middleware.GetReqID(ctx))
-
 		err := handlerFunc(w, r)
 		if err == nil {
 			return
 		}
+
+		logger := e.Logger
 
 		if err, ok := err.(interface{ Fields() map[string]any }); ok {
 			for k, v := range err.Fields() {

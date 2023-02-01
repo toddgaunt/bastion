@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"sync"
@@ -10,7 +11,9 @@ import (
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
-var key, _ = auth.GenerateSymmetricKey()
+const claimsKey contextKey = "claims"
+
+var signKey, _ = auth.GenerateSymmetricKey()
 
 var tokensMutex = sync.Mutex{}
 var tokens = make(map[auth.BearerToken]auth.Claims)
@@ -51,8 +54,24 @@ type AuthResponse struct {
 	AccessToken  string `json:"access_token"`
 }
 
+// Authorizer is a middleware that verifies the authorization token provided by
+// a request, and continues to the next handler if successful.
+func Authorizer(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		token := r.Header.Get("Authorization")
+		claims, err := signKey.Verify(auth.JWT(token))
+		if err != nil {
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), claimsKey, claims)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
 // Refresh authenticates a user and returns to them an access token and a refresh token.
-func Refresh(authenticator auth.Authenticator) func(w http.ResponseWriter, r *http.Request) {
+func (e Env) Refresh(w http.ResponseWriter, r *http.Request) {
 	fn := func(w http.ResponseWriter, r *http.Request) error {
 		username, password, ok := r.BasicAuth()
 		if !ok {
@@ -60,7 +79,7 @@ func Refresh(authenticator auth.Authenticator) func(w http.ResponseWriter, r *ht
 			return ErrUnauthorized(errors.New("enter username and password"))
 		}
 
-		claims, err := authenticator.Authenticate(username, password)
+		claims, err := e.Auth.Authenticate(username, password)
 		if err != nil {
 			w.Header().Set("WWW-Authenticate", `Basic realm="restricted"`)
 			return ErrUnauthorized(err)
@@ -73,7 +92,7 @@ func Refresh(authenticator auth.Authenticator) func(w http.ResponseWriter, r *ht
 
 		AddClaims(refreshToken, claims)
 
-		accessToken, err := claims.Sign(time.Now(), duration, key)
+		accessToken, err := signKey.Sign(claims, time.Now(), duration)
 		if err != nil {
 			return ErrAuthenticate(err)
 		}
@@ -89,11 +108,11 @@ func Refresh(authenticator auth.Authenticator) func(w http.ResponseWriter, r *ht
 		return enc.Encode(resp)
 	}
 
-	return wrapper(fn)
+	e.Wrap(fn)(w, r)
 }
 
 // Token accepts a refresh Token from the request and sends back a new refresh and access Token.
-func Token(w http.ResponseWriter, r *http.Request) {
+func (e Env) Token(w http.ResponseWriter, r *http.Request) {
 	fn := func(w http.ResponseWriter, r *http.Request) error {
 		var refreshToken auth.BearerToken
 
@@ -132,7 +151,8 @@ func Token(w http.ResponseWriter, r *http.Request) {
 		enc := json.NewEncoder(w)
 		return enc.Encode(resp)
 	}
-	wrapper(fn)
+
+	e.Wrap(fn)(w, r)
 }
 
 func generateTokens(claims auth.Claims) (*AuthResponse, error) {
@@ -143,7 +163,7 @@ func generateTokens(claims auth.Claims) (*AuthResponse, error) {
 
 	AddClaims(refreshToken, claims)
 
-	accessToken, err := claims.Sign(time.Now(), duration, key)
+	accessToken, err := signKey.Sign(claims, time.Now(), duration)
 	if err != nil {
 		return nil, ErrAuthenticate(err)
 	}
