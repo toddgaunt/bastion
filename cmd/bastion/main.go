@@ -10,10 +10,10 @@ import (
 	"path"
 	"sync"
 
-	"github.com/toddgaunt/bastion"
+	"github.com/toddgaunt/bastion/internal/auth"
 	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/content/scanner"
 	"github.com/toddgaunt/bastion/internal/log"
-	"github.com/toddgaunt/bastion/internal/router"
 )
 
 func isFlagPassed(name string) bool {
@@ -35,50 +35,53 @@ func serve(prefixDir string, config configServer) {
 	dir := path.Clean(prefixDir)
 	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
 
-	details := bastion.Details{
+	details := content.Details{
 		Name:        config.Content.Name,
 		Description: config.Content.Description,
 		Style:       config.Content.Style,
 	}
 
-	contentScanner := &content.IntervalScanner{
-		ScanInterval: config.Content.ScanInterval,
-		Logger:       logger,
-		WithDetails:  details,
+	contentScanner := &scanner.Scanner{
+		Interval: config.Content.ScanInterval,
+		Logger:   logger,
+		Details:  details,
 	}
 
-	contentScanner.Start(dir+"/articles", done, wg)
+	contentScanner.Start(dir+"/content", done, wg)
 
 	username, err := config.Credentials.Username.Load()
 	if err != nil {
-		logger.Error(fmt.Errorf("username: %w", err))
+		logger.Printf(log.Error, "username: %v", err)
 		return
 	}
 
 	password, err := config.Credentials.Password.Load()
 	if err != nil {
-		logger.Error(fmt.Errorf("password: %w", err))
+		logger.Printf(log.Error, "password: %v", err)
 		return
 	}
 
-	authorizer := simpleAuthorizer{username, password}
+	simpleAuth := auth.Simple{
+		Username: username,
+		Password: password,
+	}
 
-	r, err := router.New(staticFileServer, authorizer, contentScanner, logger)
+	r, err := newRouter(staticFileServer, simpleAuth, contentScanner, logger)
 	if err != nil {
-		logger.Fatal("couldn't create router: ", err.Error())
+		logger.Printf(log.Error, "couldn't create router: %v", err)
 	}
 
 	addr := fmt.Sprintf(":%d", config.Network.Port)
 
-	logger.Info(fmt.Sprintf("Serving on port %d\n", config.Network.Port))
+	logger.Printf(log.Info, "Serving on port %d\n", config.Network.Port)
 
 	if !config.Network.TLS.Disable && (config.Network.TLS.Cert != "" && config.Network.TLS.Key != "") {
 		// TLS can be used
-		logger.Fatal(http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
+		logger.Print(log.Fatal, http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
 	} else {
-		logger.Warn("TLS is disabled")
+		logger.Print(log.Warn, "TLS is disabled")
 		// Allow non-TLS for use until a certificate can be acquired
-		logger.Fatal(http.ListenAndServe(addr, r))
+		logger.Print(log.Fatal, http.ListenAndServe(addr, r))
 	}
 
 	// Closing this channel signals all worker threads to stop and cleanup.
@@ -104,9 +107,9 @@ func main() {
 	logger := log.New()
 
 	if exampleConfig {
-		bytes, err := json.MarshalIndent(DefaultConfig, "", "\t")
+		bytes, err := json.MarshalIndent(defaultConfig, "", "\t")
 		if err != nil {
-			logger.Fatal(err.Error())
+			logger.Print(log.Fatal, err)
 		}
 		fmt.Println(string(bytes))
 		os.Exit(0)
@@ -122,11 +125,11 @@ func main() {
 	var config configServer
 	data, err := ioutil.ReadFile(prefixDir + "/config.json")
 	if err != nil {
-		logger.Fatal("couldn't load config: ", err.Error())
+		logger.Printf(log.Fatal, "couldn't load config: %v", err)
 	}
 
 	if err := json.Unmarshal(data, &config); err != nil {
-		logger.Fatal("couldn't load config: ", err.Error())
+		logger.Printf(log.Fatal, "couldn't load config: %v", err)
 	}
 
 	// Only flags that are explicitly set from commandline can be visited, so

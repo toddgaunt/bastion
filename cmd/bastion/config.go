@@ -6,7 +6,7 @@ import (
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
-var DefaultConfig = configServer{
+var defaultConfig = configServer{
 	Credentials: configCredentials{
 		Username: configVariable{
 			Location: "env",

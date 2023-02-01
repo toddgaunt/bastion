@@ -1,28 +1,28 @@
-package router
+package handlers
 
 import (
 	_ "embed"
 	"html/template"
 
-	"github.com/toddgaunt/bastion"
+	"github.com/toddgaunt/bastion/internal/content"
 )
 
 type templateVariables struct {
 	Title       string
 	Description string
 	HTML        template.HTML
-	content     bastion.ContentStore
+	content     content.Store
 }
 
-func (vars templateVariables) Details() bastion.Details {
-	return vars.content.Details()
+func (vars templateVariables) Details() content.Details {
+	return vars.content.GetDetails()
 }
 
-func (vars templateVariables) Pinned() []bastion.Article {
+func (vars templateVariables) Pinned() []content.Article {
 	return vars.content.GetAll(true)
 }
 
-func (vars templateVariables) Index() []bastion.Article {
+func (vars templateVariables) Index() []content.Article {
 	return vars.content.GetAll(false)
 }
 

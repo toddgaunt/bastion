@@ -1,7 +1,0 @@
-Title: Hidden
-Description: You shouldn't be seeing this
-Date: 2020-11-04
-Tag: Example
-Tag: Markdown
-=== markdown ===
-This article should be hidden. If it is listed or can be linked to, then the server has a bug

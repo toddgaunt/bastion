@@ -1,19 +1,20 @@
-package router
+package handlers
 
 import (
 	"bytes"
 	"context"
 	_ "embed"
 	"fmt"
-	"html/template"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
+
+type contextKey string
 
 const articlesCtxKey = contextKey("articleID")
 
@@ -27,13 +28,13 @@ func ArticlePath(next http.Handler) http.Handler {
 	})
 }
 
-// GetArticle returns an HTTP handler function to respond to HTTP requests for
+// Article returns an HTTP handler function to respond to HTTP requests for
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w http.ResponseWriter, r *http.Request) error {
+func Articles(store content.Store) func(w http.ResponseWriter, r *http.Request) {
 	const op = "GetArticle"
-	return func(w http.ResponseWriter, r *http.Request) error {
+	fn := func(w http.ResponseWriter, r *http.Request) error {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
 		// The critical section is wrapped within a closure so defer can be
@@ -41,7 +42,7 @@ func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w ht
 		var markdown string
 		var vars templateVariables
 		var getArticle = func(articleKey string) error {
-			article, ok := content.Get(articleKey)
+			article, ok := store.Get(articleKey)
 
 			if !ok {
 				return errors.Annotation{
@@ -65,7 +66,7 @@ func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w ht
 				Title:       article.Title,
 				Description: article.Description,
 				HTML:        article.HTML,
-				content:     content,
+				content:     store,
 			}
 
 			return nil
@@ -84,7 +85,7 @@ func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w ht
 				return err
 			}
 			buf := &bytes.Buffer{}
-			tmpl.Execute(buf, vars)
+			articleTemplate.Execute(buf, vars)
 
 			w.Header().Add("Content-Type", "text/html")
 			w.Write(buf.Bytes())
@@ -92,4 +93,6 @@ func GetArticle(tmpl *template.Template, content bastion.ContentStore) func(w ht
 
 		return nil
 	}
+
+	return wrapper(fn)
 }

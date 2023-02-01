@@ -1,4 +1,4 @@
-package content
+package scanner
 
 import (
 	"errors"
@@ -13,19 +13,20 @@ import (
 	"sync"
 	"time"
 
-	"github.com/toddgaunt/bastion"
+	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/log"
 )
 
-type IntervalScanner struct {
-	ScanInterval int
-	Logger       bastion.Logger
-	WithDetails  bastion.Details
+type Scanner struct {
+	Interval int
+	Logger   log.Logger
+	Details  content.Details
 
 	mutex      sync.RWMutex
-	articleMap map[string]bastion.Article
+	articleMap map[string]content.Article
 }
 
-func (m *IntervalScanner) Get(key string) (bastion.Article, bool) {
+func (m *Scanner) Get(key string) (content.Article, bool) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
@@ -33,11 +34,11 @@ func (m *IntervalScanner) Get(key string) (bastion.Article, bool) {
 	return article, ok
 }
 
-func (m *IntervalScanner) GetAll(pinned bool) []bastion.Article {
+func (m *Scanner) GetAll(pinned bool) []content.Article {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
-	list := []bastion.Article{}
+	list := []content.Article{}
 	for _, v := range m.articleMap {
 		// Only add pinned articles to the list
 		if v.Pinned == pinned {
@@ -56,14 +57,14 @@ func (m *IntervalScanner) GetAll(pinned bool) []bastion.Article {
 	return list
 }
 
-func (m *IntervalScanner) Details() bastion.Details {
-	return m.WithDetails
+func (m *Scanner) GetDetails() content.Details {
+	return m.Details
 }
 
 // generateArticles walks a directory, and generates articles from
 // subdirectories and markdown files found.
-func generateArticles(dirpath string) (map[string]bastion.Article, error) {
-	articles := make(map[string]bastion.Article)
+func generateArticles(dirpath string) (map[string]content.Article, error) {
+	articles := make(map[string]content.Article)
 
 	err := filepath.Walk(dirpath, func(articlePath string, info os.FileInfo, err error) error {
 		if err != nil {
@@ -86,7 +87,7 @@ func generateArticles(dirpath string) (map[string]bastion.Article, error) {
 			return nil
 		}
 
-		article := bastion.Article{Route: route}
+		article := content.Article{Route: route}
 
 		// Past this point the article should always be added, even if only partially
 		// made, since if there is an error a ProblemJSON will be generated.
@@ -103,7 +104,7 @@ func generateArticles(dirpath string) (map[string]bastion.Article, error) {
 		}
 		article.Markdown = string(bytes)
 
-		doc, err := parseDocument(bytes)
+		doc, err := content.ParseDocument(bytes)
 		if err != nil {
 			article.Err = err
 			return nil
@@ -143,37 +144,36 @@ func generateArticles(dirpath string) (map[string]bastion.Article, error) {
 
 // Scan updates the articleMap based on whats found in the directory at
 // articlesPath.
-func (s *IntervalScanner) ScanArticles(articlesPath string) {
+func (s *Scanner) ScanArticles(articlesPath string) {
 	s.mutex.Lock()
 	defer s.mutex.Unlock()
 
 	articles, err := generateArticles(articlesPath)
 	if err != nil {
-		s.Logger.Error(err.Error())
+		s.Logger.Print(log.Error, err.Error())
 	} else {
 		s.articleMap = articles
 	}
 	for _, article := range articles {
 		if article.Err == nil {
-			s.Logger.Infow("scan",
+			s.Logger.With(
 				"status", "ok",
 				"route", article.Route,
-			)
+			).Print(log.Info, "scan")
 		} else {
-			s.Logger.Infow("scan",
+			s.Logger.With(
 				"status", "fail",
-				"route", article.Route,
-				"err", article.Err.Error(),
-			)
+				"route", "err",
+			).Print(log.Info, "scan")
 		}
 	}
 }
 
 // Start starts a goroutine to scan for articles every s.ScanInterval seconds.
 // If s.ScanInterval is 0, then a scan is only performed once at startup.
-func (s *IntervalScanner) Start(articlesPath string, done chan bool, wg *sync.WaitGroup) {
-	if s.ScanInterval == 0 {
-		s.Logger.Warn("scan_interval is 0, articles will only be scanned once")
+func (s *Scanner) Start(articlesPath string, done chan bool, wg *sync.WaitGroup) {
+	if s.Interval == 0 {
+		s.Logger.Print(log.Warn, "scan_interval is 0, articles will only be scanned once")
 	}
 
 	wg.Add(1)
@@ -185,10 +185,10 @@ func (s *IntervalScanner) Start(articlesPath string, done chan bool, wg *sync.Wa
 				break loop
 			default:
 				s.ScanArticles(articlesPath)
-				if s.ScanInterval == 0 {
+				if s.Interval == 0 {
 					break loop
 				}
-				time.Sleep(time.Duration(s.ScanInterval) * time.Second)
+				time.Sleep(time.Duration(s.Interval) * time.Second)
 			}
 		}
 		wg.Done()

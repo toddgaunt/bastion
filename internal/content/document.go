@@ -24,30 +24,30 @@ const footerHTML = `</div>
 var headerTemplate = template.Must(template.New("header").Parse(headerHTML))
 var textTemplate = template.Must(template.New("text").Parse(`<pre>{{.}}</pre>`))
 
-// document is a structured represtation of the file format for articles.
-type document struct {
-	Properties properties
+// Document is a structured represtation of the file format for articles.
+type Document struct {
+	Properties Properties
 	Format     string
 	Content    []byte
 }
 
-// parseDocument parses bytes and returns a Document, or an error if the bytes did not
+// ParseDocument parses bytes and returns a Document, or an error if the bytes did not
 // form a valid document representation
-func parseDocument(data []byte) (document, error) {
+func ParseDocument(data []byte) (Document, error) {
 	re := regexp.MustCompile(`===.*===`)
 	index := re.FindIndex(data)
 	if index == nil {
-		return document{}, errors.New("document does not have article delimiter")
+		return Document{}, errors.New("document does not have article delimiter")
 	}
 
 	properties, err := parseProperties(data[:index[0]])
 	if err != nil {
-		return document{}, err
+		return Document{}, err
 	}
 	format := strings.TrimSpace(string(data[index[0]+3 : index[1]-3]))
 	content := data[index[1]:]
 
-	return document{
+	return Document{
 		Properties: properties,
 		Format:     format,
 		Content:    content,
@@ -55,7 +55,7 @@ func parseDocument(data []byte) (document, error) {
 }
 
 // GenerateHTML generates HTML from a given document
-func (doc *document) GenerateHTML() (template.HTML, error) {
+func (doc *Document) GenerateHTML() (template.HTML, error) {
 	type variables struct {
 		Title       string
 		Author      string
@@ -89,11 +89,11 @@ func (doc *document) GenerateHTML() (template.HTML, error) {
 	return template.HTML(buf.String()), nil
 }
 
-// properties is a key value store of document properties
-type properties map[string][]string
+// Properties is a key value store of document Properties
+type Properties map[string][]string
 
 // Add adds a key and value to a property
-func (p properties) Add(key, value string) {
+func (p Properties) Add(key, value string) {
 	values, ok := p[strings.ToLower(key)]
 	if !ok {
 		p[key] = []string{value}
@@ -103,7 +103,7 @@ func (p properties) Add(key, value string) {
 }
 
 // Value returns the first value associated with a key
-func (p properties) Value(key string) string {
+func (p Properties) Value(key string) string {
 	values, ok := p[strings.ToLower(key)]
 	if !ok {
 		return ""
@@ -112,7 +112,7 @@ func (p properties) Value(key string) string {
 }
 
 // Values returns all of the values associated with a key
-func (p properties) Values(key string) []string {
+func (p Properties) Values(key string) []string {
 	values, ok := p[strings.ToLower(key)]
 	if !ok {
 		return nil
@@ -120,8 +120,8 @@ func (p properties) Values(key string) []string {
 	return values
 }
 
-func parseProperties(data []byte) (properties, error) {
-	properties := make(properties)
+func parseProperties(data []byte) (Properties, error) {
+	properties := make(Properties)
 	scanner := bufio.NewScanner(bytes.NewReader(data))
 	for scanner.Scan() {
 		text := scanner.Text()

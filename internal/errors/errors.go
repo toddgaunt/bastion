@@ -91,6 +91,7 @@ type Annotation struct {
 	WithTitle  Title
 	WithStatus int
 	WithDetail string
+	WithFields map[string]any
 }
 
 // Wrap annotates err with the values present in the annotation.

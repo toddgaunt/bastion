@@ -1,10 +1,11 @@
-package router
+package handlers
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/go-chi/chi/middleware"
+	"github.com/toddgaunt/bastion/internal/log"
 )
 
 // Problem represents server errors in JSON, defined by IETF RFC 7807.
@@ -16,18 +17,24 @@ type Problem struct {
 	Instance string `json:"instance,omitempty"`
 }
 
-// Handler wraps an HTTP handler that returns a httpjson.Problem so it
+// wrapper wraps an HTTP handler that returns a httpjson.Problem so it
 // can be logged and written to a user after a handler returns it
-func Handler(handlerFunc func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) {
+func wrapper(handlerFunc func(w http.ResponseWriter, r *http.Request) error) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
 
-		logger := logFromContext(r.Context())
+		logger := log.From(r.Context())
 		logger = logger.With("request_id", middleware.GetReqID(ctx))
 
 		err := handlerFunc(w, r)
 		if err == nil {
 			return
+		}
+
+		if err, ok := err.(interface{ Fields() map[string]any }); ok {
+			for k, v := range err.Fields() {
+				logger = logger.With(k, v)
+			}
 		}
 
 		problem := Problem{}
@@ -72,15 +79,15 @@ func Handler(handlerFunc func(w http.ResponseWriter, r *http.Request) error) fun
 			logger = logger.With("detail", problem.Detail)
 		}
 
-		logFunc := logger.Infow
+		logLevel := log.Info
 		switch {
 		case problem.Status >= 400 && problem.Status <= 499:
-			logFunc = logger.Infow
+			logLevel = log.Info
 		case problem.Status >= 500 && problem.Status <= 599:
-			logFunc = logger.Infow
+			logLevel = log.Info
 		}
 
-		logFunc(err.Error())
+		logger.Print(logLevel, err.Error())
 
 		// MarshalIndent is used since problems are meant to be as human
 		// readable as possible. They aren't worth minifying.

@@ -1,18 +1,15 @@
-package router
+package handlers
 
 import (
 	"bytes"
 	"context"
 	"fmt"
-	"html/template"
 	"net/http"
 
 	"github.com/go-chi/chi"
-	"github.com/toddgaunt/bastion"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
-
-const ProblemPath = ".problems"
 
 const problemsCtxKey = contextKey("problemID")
 
@@ -25,12 +22,12 @@ func ProblemID(next http.Handler) http.Handler {
 	})
 }
 
-// GetProblem is a request handler that returns an HTTP handler that responds
+// Problems is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
-func GetProblem(tmpl *template.Template, content bastion.ContentStore) func(w http.ResponseWriter, r *http.Request) error {
+func Problems(store content.Store) func(w http.ResponseWriter, r *http.Request) {
 	const op = "GetProblem"
 
-	return func(w http.ResponseWriter, r *http.Request) error {
+	fn := func(w http.ResponseWriter, r *http.Request) error {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
 		description := ""
@@ -53,13 +50,15 @@ func GetProblem(tmpl *template.Template, content bastion.ContentStore) func(w ht
 		vars := templateVariables{
 			Title:       problemID,
 			Description: description,
-			content:     content,
+			content:     store,
 		}
 
 		buf := &bytes.Buffer{}
-		tmpl.Execute(buf, vars)
+		problemTemplate.Execute(buf, vars)
 		w.Write(buf.Bytes())
 
 		return nil
 	}
+
+	return wrapper(fn)
 }
