@@ -9,16 +9,16 @@ import (
 )
 
 // Index returns an HTTP handler that responds with the site index.
-func (e Env) Index(w http.ResponseWriter, r *http.Request) {
-	const op = errors.Op("GetIndex")
+func (env Env) Index(w http.ResponseWriter, r *http.Request) {
+	const op = errors.Op("Index")
 
 	// Actions to perform for every request
-	fn := func(w http.ResponseWriter, _ *http.Request) error {
-		details := e.Store.GetDetails()
+	fn := func(w http.ResponseWriter, _ *http.Request) errors.Problem {
+		details := env.Store.GetDetails()
 		vars := templateVariables{
 			Title:       details.Name,
 			Description: details.Description,
-			content:     e.Store,
+			content:     env.Store,
 		}
 
 		buf := &bytes.Buffer{}
@@ -31,5 +31,6 @@ func (e Env) Index(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}
 
-	e.Wrap(fn)(w, r)
+	err := fn(w, r)
+	handleError(w, err, env.Logger)
 }

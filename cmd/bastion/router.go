@@ -15,6 +15,8 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 	r.Use(middleware.RequestID)
 	r.Use(middleware.Logger)
 
+	r.NotFound(env.NotFound)
+
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", env.Index)
 		r.With(handlers.ArticlePath).Get("/*", env.Articles)
@@ -30,8 +32,8 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 	r.Handle("/.static/*", http.StripPrefix("/.static/", staticFileServer))
 
 	r.Route("/.auth", func(r chi.Router) {
-		r.Get("/login", env.Refresh)
-		r.Post("/refresh", env.Token)
+		r.Get("/login", env.Login)
+		r.Post("/refresh_token", env.Token)
 	})
 
 	return r, nil

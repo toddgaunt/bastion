@@ -27,7 +27,7 @@ func isFlagPassed(name string) bool {
 	return found
 }
 
-func serve(prefixDir string, config configServer) {
+func serve(prefixDir string, config configServer) int {
 	var done chan bool
 	var wg = &sync.WaitGroup{}
 
@@ -53,18 +53,19 @@ func serve(prefixDir string, config configServer) {
 	username, err := config.Credentials.Username.Load()
 	if err != nil {
 		logger.Printf(log.Error, "username: %v", err)
-		return
+		return 1
 	}
 
 	password, err := config.Credentials.Password.Load()
 	if err != nil {
 		logger.Printf(log.Error, "password: %v", err)
-		return
+		return 1
 	}
 
-	simpleAuth := auth.Simple{
-		Username: username,
-		Password: password,
+	simpleAuth, err := auth.NewSimple(username, password)
+	if err != nil {
+		logger.Printf(log.Error, "new simple auth: %v", err)
+		return 1
 	}
 
 	env := handlers.Env{
@@ -76,6 +77,7 @@ func serve(prefixDir string, config configServer) {
 	r, err := newRouter(staticFileServer, env)
 	if err != nil {
 		logger.Printf(log.Error, "couldn't create router: %v", err)
+		return 1
 	}
 
 	addr := fmt.Sprintf(":%d", config.Network.Port)
@@ -94,6 +96,7 @@ func serve(prefixDir string, config configServer) {
 	// Closing this channel signals all worker threads to stop and cleanup.
 	close(done)
 	wg.Wait()
+	return 0
 }
 
 func main() {
@@ -155,6 +158,6 @@ func main() {
 		}
 	})
 
-	// Start the server
-	serve(prefixDir, config)
+	// Run the server
+	os.Exit(serve(prefixDir, config))
 }

@@ -31,17 +31,17 @@ func ArticlePath(next http.Handler) http.Handler {
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func (e Env) Articles(w http.ResponseWriter, r *http.Request) {
-	const op = "Get "
-	fn := func(w http.ResponseWriter, r *http.Request) error {
+func (env Env) Articles(w http.ResponseWriter, r *http.Request) {
+	const op = "Articles"
+	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
 		// The critical section is wrapped within a closure so defer can be
 		// used for the mutex operations.
 		var markdown string
 		var vars templateVariables
-		var getArticle = func(articleKey string) error {
-			article, ok := e.Store.Get(articleKey)
+		var getArticle = func(articleKey string) errors.Problem {
+			article, ok := env.Store.Get(articleKey)
 
 			if !ok {
 				return errors.Annotation{
@@ -65,7 +65,7 @@ func (e Env) Articles(w http.ResponseWriter, r *http.Request) {
 				Title:       article.Title,
 				Description: article.Description,
 				HTML:        article.HTML,
-				content:     e.Store,
+				content:     env.Store,
 			}
 
 			return nil
@@ -93,5 +93,6 @@ func (e Env) Articles(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}
 
-	e.Wrap(fn)(w, r)
+	err := fn(w, r)
+	handleError(w, err, env.Logger)
 }

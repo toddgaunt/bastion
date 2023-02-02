@@ -23,10 +23,10 @@ func ProblemID(next http.Handler) http.Handler {
 
 // Problems is a request handler that returns an HTTP handler that responds
 // to a request with a document describing a particular problem.
-func (e Env) Problems(w http.ResponseWriter, r *http.Request) {
-	const op = "GetProblem"
+func (env Env) Problems(w http.ResponseWriter, r *http.Request) {
+	const op = "Problems"
 
-	fn := func(w http.ResponseWriter, r *http.Request) error {
+	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
 		problemID := r.Context().Value(problemsCtxKey).(string)
 
 		description := ""
@@ -49,7 +49,7 @@ func (e Env) Problems(w http.ResponseWriter, r *http.Request) {
 		vars := templateVariables{
 			Title:       problemID,
 			Description: description,
-			content:     e.Store,
+			content:     env.Store,
 		}
 
 		buf := &bytes.Buffer{}
@@ -59,5 +59,7 @@ func (e Env) Problems(w http.ResponseWriter, r *http.Request) {
 		return nil
 	}
 
-	e.Wrap(fn)(w, r)
+	err := fn(w, r)
+	handleError(w, err, env.Logger)
+
 }

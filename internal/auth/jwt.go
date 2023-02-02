@@ -69,12 +69,6 @@ func (key SymmetricKey) Verify(token JWT) (Claims, error) {
 	return claims, nil
 }
 
-// IsExpired returns true if the authentication's expiry time has been eclipsed
-// by the passed in time.
-func (a Claims) IsExpired(now time.Time) bool {
-	return a.NotBefore <= now.Unix() && a.Expiry <= now.Unix()
-}
-
 // GenerateSymmetricKey creates a random symmetric key for signing or encrypting claims.
 func GenerateSymmetricKey() (SymmetricKey, error) {
 	var key SymmetricKey

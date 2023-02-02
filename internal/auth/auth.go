@@ -2,6 +2,7 @@ package auth
 
 import (
 	"crypto/rand"
+	"time"
 )
 
 type Authenticator interface {
@@ -17,6 +18,11 @@ type Claims struct {
 	Expiry    int64 `json:"exp"` // RFC 7519 4.1.4
 	NotBefore int64 `json:"nbf"` // RFC 7519 4.1.5
 	IssuedAt  int64 `json:"iat"` // RFC 7519 4.1.6
+}
+
+// IsExpired returns true if the claims are no longer valid.
+func (c Claims) IsExpired(now time.Time) bool {
+	return c.NotBefore <= now.Unix() && c.Expiry <= now.Unix()
 }
 
 // ReadBytes reads size bytes from /dev/urandom.

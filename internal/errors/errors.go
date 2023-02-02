@@ -25,7 +25,7 @@ func (t Type) Type() Type {
 	return t
 }
 
-// Title is a human readable title for an error.
+// itle is a human readable title for an error.
 type Title string
 
 // As finds the first error in err's chain that matches target, and if one is
@@ -84,6 +84,45 @@ var Unwrap = errors.Unwrap
 // a synonym for %v.
 var Errorf = fmt.Errorf
 
+type Error interface {
+	OpHolder
+	TypeHolder
+	TitleHolder
+	StatusHolder
+	DetailHolder
+	error
+}
+
+type Problem interface {
+	StatusHolder
+	DetailHolder
+	error
+}
+
+type FieldsHolder interface {
+	Fields() map[string]any
+}
+
+type DetailHolder interface {
+	Detail() string
+}
+
+type StatusHolder interface {
+	Status() int
+}
+
+type TitleHolder interface {
+	Title() string
+}
+
+type TypeHolder interface {
+	Type() string
+}
+
+type OpHolder interface {
+	Op() string
+}
+
 // Annotation is a set of fields that can be filled to wrap an error with.
 type Annotation struct {
 	WithOp     Op
@@ -95,12 +134,20 @@ type Annotation struct {
 }
 
 // Wrap annotates err with the values present in the annotation.
-func (a Annotation) Wrap(err error) error {
+func (a Annotation) Wrap(err error) Error {
+	if err == nil {
+		return nil
+	}
 	return annotatedError{a, err}
 }
 
+// Wrapf annotates err with the values present in the annotation.
+func (a Annotation) Wrapf(format string, args ...any) Error {
+	return annotatedError{a, Errorf(format, args...)}
+}
+
 type annotatedError struct {
-	Annotation
+	ann Annotation
 	err error
 }
 
@@ -117,9 +164,9 @@ func pad(msg, s string) string {
 func (e annotatedError) Error() string {
 	msg := ""
 
-	if e.WithOp != "" {
+	if e.ann.WithOp != "" {
 		msg = pad(msg, ": ")
-		msg += string(e.WithOp)
+		msg += string(e.ann.WithOp)
 	}
 
 	if e.err != nil {
@@ -131,45 +178,56 @@ func (e annotatedError) Error() string {
 }
 
 // Type returns the kind or class of the error.
+func (e annotatedError) Op() string {
+	if e.ann.WithOp == "" {
+		if err, ok := e.err.(OpHolder); ok {
+			return string(err.Op())
+		}
+	}
+
+	return string(e.ann.WithOp)
+}
+
+// Type returns the kind or class of the error.
 func (e annotatedError) Type() string {
-	if e.WithType == "" {
-		if err, ok := e.err.(interface{ Type() string }); ok {
+	if e.ann.WithType == "" {
+		if err, ok := e.err.(TypeHolder); ok {
 			return err.Type()
 		}
 	}
 
-	return string(e.WithType)
+	return string(e.ann.WithType)
 }
 
 // Title returns the human readble title of an error.
 func (e annotatedError) Title() string {
-	if e.WithTitle == "" {
-		if err, ok := e.err.(interface{ Title() string }); ok {
+	if e.ann.WithTitle == "" {
+		if err, ok := e.err.(TitleHolder); ok {
 			return err.Title()
 		}
 	}
 
-	return string(e.WithTitle)
+	return string(e.ann.WithTitle)
 }
 
 // Status returns the error's status code.
 func (e annotatedError) Status() int {
-	if e.WithStatus == 0 {
-		if err, ok := e.err.(interface{ Status() int }); ok {
+	if e.ann.WithStatus == 0 {
+		if err, ok := e.err.(StatusHolder); ok {
 			return err.Status()
 		}
 	}
 
-	return e.WithStatus
+	return e.ann.WithStatus
 }
 
 // Detail constructs a string from an Error's message list which is
 // appropriate to return to external clients.
 func (e annotatedError) Detail() string {
-	msg := string(e.WithDetail)
+	msg := string(e.ann.WithDetail)
 
 	if e.err != nil {
-		if err, ok := e.err.(interface{ Detail() string }); ok {
+		if err, ok := e.err.(DetailHolder); ok {
 			next := err.Detail()
 			if next != "" {
 				msg = pad(msg, ": ")
@@ -189,7 +247,7 @@ func (e annotatedError) Unwrap() error {
 // Is returns true if target has the same type as e.
 func (e annotatedError) Is(target error) bool {
 	if target, ok := target.(interface{ Type() Type }); ok {
-		return e.WithType == target.Type()
+		return e.ann.WithType == target.Type()
 	}
 
 	return false

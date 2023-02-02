@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"crypto/rand"
 	"encoding/base64"
 )
 
@@ -10,13 +9,12 @@ const (
 	httpHeaderValuePrefix = "Bearer "
 )
 
+// BearerToken is a base64 encoded string.
 type BearerToken string
 
 // NewBearerToken creates a simple unique base64 encoded bearer token.
 func NewBearerToken() (BearerToken, error) {
-	var token [16]byte
-
-	_, err := rand.Read(token[:])
+	token, err := ReadBytes(16)
 	if err != nil {
 		return "", err
 	}
