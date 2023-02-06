@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -46,9 +47,9 @@ type AuthResponse struct {
 	AccessToken  string `json:"access_token"`
 }
 
-// Authorizer is a middleware that verifies the authorization token provided by
+// Authorize is a middleware that verifies the authorization token provided by
 // a request, and continues to the next handler if successful.
-func (env Env) Authorizer(next http.Handler) http.Handler {
+func (env Env) Authorize(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
 		claims, err := signKey.Verify(auth.JWT(token))
@@ -58,6 +59,8 @@ func (env Env) Authorizer(next http.Handler) http.Handler {
 
 			return
 		}
+
+		fmt.Printf("try\n")
 
 		ctx := context.WithValue(r.Context(), claimsKey, claims)
 

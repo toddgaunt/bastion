@@ -3,12 +3,14 @@ package content
 import (
 	"bufio"
 	"bytes"
-	"errors"
+	"fmt"
 	"html/template"
 	"regexp"
+	"sort"
 	"strings"
 
 	"github.com/gomarkdown/markdown"
+	"github.com/toddgaunt/bastion/internal/errors"
 )
 
 const headerHTML = `<article>
@@ -31,13 +33,13 @@ type Document struct {
 	Content    []byte
 }
 
-// ParseDocument parses bytes and returns a Document, or an error if the bytes did not
-// form a valid document representation
-func ParseDocument(data []byte) (Document, error) {
+// UnmarshalDocument parses bytes and returns a Document, or an error if the
+// bytes did not form a valid document representation.
+func UnmarshalDocument(data []byte) (Document, error) {
 	re := regexp.MustCompile(`===.*===`)
 	index := re.FindIndex(data)
 	if index == nil {
-		return Document{}, errors.New("document does not have article delimiter")
+		return Document{}, errors.New("document does not have a content delimiter of the form === <format> ===")
 	}
 
 	properties, err := parseProperties(data[:index[0]])
@@ -52,6 +54,41 @@ func ParseDocument(data []byte) (Document, error) {
 		Format:     format,
 		Content:    content,
 	}, nil
+}
+
+// MarshalDocument transforms a Document into its canonical form as bytes.
+func MarshalDocument(doc Document) ([]byte, error) {
+	var err error
+
+	buf := bytes.Buffer{}
+
+	var keys []string
+	for k := range doc.Properties {
+		keys = append(keys, k)
+	}
+
+	sort.Strings(keys)
+
+	for _, k := range keys {
+		for _, v := range doc.Properties[k] {
+			_, err := fmt.Fprintf(&buf, "%s: %s\n", k, v)
+			if err != nil {
+				return nil, errors.Errorf("failed write property %s: %s: err", k, v, err)
+			}
+		}
+	}
+
+	_, err = fmt.Fprintf(&buf, "=== %s ===\n", doc.Format)
+	if err != nil {
+		return nil, errors.Errorf("failed to write format %s: %v", doc.Format, err)
+	}
+
+	_, err = buf.Write(doc.Content)
+	if err != nil {
+		return nil, errors.Errorf("failed to write content: %v", err)
+	}
+
+	return buf.Bytes(), nil
 }
 
 // GenerateHTML generates HTML from a given document
@@ -133,7 +170,7 @@ func parseProperties(data []byte) (Properties, error) {
 		// KEY : VALUE syntax is expected on non blank lines
 		split := strings.SplitN(text, ":", 2)
 		if len(split) != 2 {
-			return nil, errors.New("expected 'KEY : VALUE' pair")
+			return nil, errors.New("expected 'Key : Value' pair")
 		}
 
 		key := strings.ToLower(strings.TrimSpace(split[0]))

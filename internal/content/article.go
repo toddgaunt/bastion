@@ -7,17 +7,25 @@ import (
 )
 
 type Article struct {
-	Route       string
+	// Filepath is the canonical filepath leading the document source.
+	FilePath string
+
+	// Route is the route to the article on the website.
+	Route string
+
+	// Content of the article
 	Title       string
 	Description string
 	Author      string
 	Pinned      bool
 	Created     time.Time
 	Updated     time.Time
+	HTML        template.HTML
 
-	HTML     template.HTML
-	Markdown string
-	Err      error
+	// Original markdown content of the article
+	Markdown []byte
+
+	Err error
 }
 
 func (article Article) FormattedDate() string {

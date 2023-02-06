@@ -1,7 +1,6 @@
 package scanner
 
 import (
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -14,6 +13,7 @@ import (
 	"time"
 
 	"github.com/toddgaunt/bastion/internal/content"
+	"github.com/toddgaunt/bastion/internal/errors"
 	"github.com/toddgaunt/bastion/internal/log"
 )
 
@@ -26,12 +26,38 @@ type Scanner struct {
 	articleMap map[string]content.Article
 }
 
-func (m *Scanner) Get(key string) (content.Article, bool) {
+func (m *Scanner) Get(key string) (content.Article, error) {
 	m.mutex.RLock()
 	defer m.mutex.RUnlock()
 
 	article, ok := m.articleMap[key]
-	return article, ok
+	if !ok {
+		return content.Article{}, errors.New("article does not exist")
+	}
+
+	return article, nil
+}
+
+func (m *Scanner) Update(key string, doc content.Document) error {
+	m.mutex.Lock()
+	defer m.mutex.Unlock()
+
+	article, err := m.Get(key)
+	if err != nil {
+		return err
+	}
+
+	bytes, err := content.MarshalDocument(doc)
+	if err != nil {
+		return err
+	}
+
+	err = os.WriteFile(article.FilePath, bytes, 0755)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (m *Scanner) GetAll(pinned bool) []content.Article {
@@ -66,13 +92,13 @@ func (m *Scanner) GetDetails() content.Details {
 func generateArticles(dirpath string) (map[string]content.Article, error) {
 	articles := make(map[string]content.Article)
 
-	err := filepath.Walk(dirpath, func(articlePath string, info os.FileInfo, err error) error {
+	err := filepath.Walk(dirpath, func(documentPath string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 
-		name := path.Base(articlePath)
-		route := strings.TrimPrefix(strings.TrimSuffix(articlePath, path.Ext(articlePath)), path.Clean(dirpath))
+		name := path.Base(documentPath)
+		route := strings.TrimPrefix(strings.TrimSuffix(documentPath, path.Ext(documentPath)), path.Clean(dirpath))
 
 		if strings.HasPrefix(name, ".") {
 			// Skip "hidden" files and directories, since '.' is reserved for built-in routes
@@ -97,19 +123,25 @@ func generateArticles(dirpath string) (map[string]content.Article, error) {
 			}
 		}()
 
-		bytes, err := ioutil.ReadFile(articlePath)
+		bytes, err := ioutil.ReadFile(documentPath)
 		if err != nil {
-			article.Err = fmt.Errorf("article '%s' could not be read from the filesystem", route)
+			article.Err = errors.Errorf("failed to load document: %v", err)
 			return nil
 		}
-		article.Markdown = string(bytes)
 
-		doc, err := content.ParseDocument(bytes)
+		doc, err := content.UnmarshalDocument(bytes)
 		if err != nil {
 			article.Err = err
 			return nil
 		}
 
+		// Marshal here rather than use the bytes directly
+		article.Markdown, err = content.MarshalDocument(doc)
+		if err != nil {
+			return err
+		}
+
+		article.FilePath = documentPath
 		article.Title = doc.Properties.Value("Title")
 		article.Description = doc.Properties.Value("Description")
 		article.Author = doc.Properties.Value("Author")
@@ -145,14 +177,13 @@ func generateArticles(dirpath string) (map[string]content.Article, error) {
 // Scan updates the articleMap based on whats found in the directory at
 // articlesPath.
 func (s *Scanner) ScanArticles(articlesPath string) {
-	s.mutex.Lock()
-	defer s.mutex.Unlock()
-
 	articles, err := generateArticles(articlesPath)
 	if err != nil {
 		s.Logger.Print(log.Error, err.Error())
 	} else {
+		s.mutex.Lock()
 		s.articleMap = articles
+		s.mutex.Unlock()
 	}
 	for _, article := range articles {
 		if article.Err == nil {

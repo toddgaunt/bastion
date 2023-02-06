@@ -19,15 +19,6 @@ type Env struct {
 	Logger log.Logger
 }
 
-// Problem represents server errors in JSON, defined by IETF RFC 7807.
-type Problem struct {
-	Type     string `json:"type,omitempty"`
-	Title    string `json:"title,omitempty"`
-	Status   int    `json:"status"`
-	Detail   string `json:"detail,omitempty"`
-	Instance string `json:"instance,omitempty"`
-}
-
 var statusInternal = errors.Annotation{WithStatus: http.StatusInternalServerError}
 var statusBadRequest = errors.Annotation{WithStatus: http.StatusBadRequest}
 var statusUnauthorized = errors.Annotation{WithStatus: http.StatusUnauthorized}
@@ -46,8 +37,17 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 		}
 	}
 
+	// problemJSON represents server errors in JSON, defined by IETF RFC 7807.
+	type problemJSON struct {
+		Type     string `json:"type,omitempty"`
+		Title    string `json:"title,omitempty"`
+		Status   int    `json:"status"`
+		Detail   string `json:"detail,omitempty"`
+		Instance string `json:"instance,omitempty"`
+	}
+
 	op := ""
-	problem := Problem{}
+	problem := problemJSON{}
 
 	if err, ok := err.(errors.OpHolder); ok {
 		op = err.Op()

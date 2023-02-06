@@ -18,6 +18,7 @@ func NewSimple(username, password string) (*Simple, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	return &Simple{
 		username: username,
 		hash:     hash,
@@ -30,16 +31,17 @@ func (sa *Simple) Authenticate(username, password string) (Claims, error) {
 		return Claims{}, errors.New("invalid username and password")
 	}
 
+	if sa.username != username {
+		return Claims{}, errors.New("invalid username and password")
+	}
+
 	err := bcrypt.CompareHashAndPassword(sa.hash, []byte(password))
 	if err != nil {
 		return Claims{}, err
 	}
 
-	if sa.username != username {
-		return Claims{}, errors.New("invalid username and password")
-	}
-
 	now := time.Now()
+
 	return Claims{
 		Username:  username,
 		Admin:     true,

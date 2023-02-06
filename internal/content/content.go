@@ -1,9 +1,10 @@
 package content
 
 type Store interface {
-	Get(key string) (Article, bool)
-	GetAll(pinned bool) []Article
 	GetDetails() Details
+	Get(key string) (Article, error)
+	GetAll(pinned bool) []Article
+	Update(key string, doc Document) error
 }
 
 type Details struct {

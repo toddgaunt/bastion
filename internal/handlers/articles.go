@@ -5,11 +5,13 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi"
+	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -27,23 +29,21 @@ func ArticlePath(next http.Handler) http.Handler {
 	})
 }
 
-// Articles returns an HTTP handler function to respond to HTTP requests for
+// GetArticle returns an HTTP handler function to respond to HTTP requests for
 // an article. The handler will write an HTML representation of an article as
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
-func (env Env) Articles(w http.ResponseWriter, r *http.Request) {
-	const op = "Articles"
+func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
+	const op = "Get"
 	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
-		// The critical section is wrapped within a closure so defer can be
-		// used for the mutex operations.
-		var markdown string
+		var markdown []byte
 		var vars templateVariables
 		var getArticle = func(articleKey string) errors.Problem {
-			article, ok := env.Store.Get(articleKey)
+			article, err := env.Store.Get(articleKey)
 
-			if !ok {
+			if err != nil {
 				return errors.Annotation{
 					WithOp:     op,
 					WithTitle:  "Article Not Found",
@@ -77,7 +77,7 @@ func (env Env) Articles(w http.ResponseWriter, r *http.Request) {
 				return err
 			}
 			w.Header().Add("Content-Type", "text")
-			w.Write([]byte(markdown))
+			w.Write(markdown)
 		} else {
 			err := getArticle(articleID)
 			if err != nil {
@@ -89,6 +89,49 @@ func (env Env) Articles(w http.ResponseWriter, r *http.Request) {
 			w.Header().Add("Content-Type", "text/html")
 			w.Write(buf.Bytes())
 		}
+
+		return nil
+	}
+
+	err := fn(w, r)
+	handleError(w, err, env.Logger)
+}
+
+// UpdateDocument returns an HTTP handler function to respond to HTTP requests for
+// an article. The handler will write an HTML representation of an article as
+// a response, or a problemjson response if the article does not exist or there
+// was a problem generating it.
+func (env Env) UpdateDocument(w http.ResponseWriter, r *http.Request) {
+	const op = "Update"
+	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
+		articleID := r.Context().Value(articlesCtxKey).(string)
+		articleID = strings.TrimSuffix(articleID, ".md")
+
+		bytes, err := io.ReadAll(r.Body)
+		if err != nil {
+			return errors.Annotation{
+				WithStatus: http.StatusInternalServerError,
+				WithDetail: "failed to read request",
+			}.Wrap(err)
+		}
+
+		doc, err := content.UnmarshalDocument(bytes)
+		if err != nil {
+			return errors.Annotation{
+				WithStatus: http.StatusBadRequest,
+				WithDetail: "failed to parse document",
+			}.Wrap(err)
+		}
+
+		err = env.Store.Update(articleID, doc)
+		if err != nil {
+			errors.Annotation{
+				WithStatus: http.StatusInternalServerError,
+				WithDetail: "failed to update document",
+			}.Wrap(err)
+		}
+
+		w.WriteHeader(http.StatusOK)
 
 		return nil
 	}

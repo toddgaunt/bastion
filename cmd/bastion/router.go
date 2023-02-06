@@ -19,7 +19,11 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 
 	r.Route("/", func(r chi.Router) {
 		r.Get("/", env.Index)
-		r.With(handlers.ArticlePath).Get("/*", env.Articles)
+		r.Group(func(r chi.Router) {
+			r.Use(handlers.ArticlePath)
+			r.Get("/*", env.GetArticle)
+			r.With(env.Authorize).Post("/*", env.UpdateDocument)
+		})
 	})
 
 	r.Route("/.problems", func(r chi.Router) {
