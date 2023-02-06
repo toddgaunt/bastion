@@ -16,10 +16,6 @@ www.example.com/
         contact.md
     static/
         default.css
-    templates/
-        article.html
-        index.html
-        problem.html
 ```
 
 ## Developer Quickstart
