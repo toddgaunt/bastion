@@ -39,9 +39,6 @@ func (m *Scanner) Get(key string) (content.Article, error) {
 }
 
 func (m *Scanner) Update(key string, doc content.Document) error {
-	m.mutex.Lock()
-	defer m.mutex.Unlock()
-
 	article, err := m.Get(key)
 	if err != nil {
 		return err
