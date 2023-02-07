@@ -21,3 +21,7 @@
 !/Makefile
 !/go.mod
 !/go.sum
+
+# Blacklist specific files
+out.cover
+out.cover.html

@@ -90,6 +90,7 @@ type Error interface {
 	TitleHolder
 	StatusHolder
 	DetailHolder
+	FieldsHolder
 	error
 }
 
@@ -169,6 +170,21 @@ func (e annotatedError) Error() string {
 		msg += string(e.ann.WithOp)
 	}
 
+	if e.ann.WithType != "" {
+		msg = pad(msg, ": ")
+		msg += string(e.ann.WithType)
+	}
+
+	if e.ann.WithTitle != "" {
+		msg = pad(msg, ": ")
+		msg += string(e.ann.WithTitle)
+	}
+
+	if e.ann.WithStatus != 0 {
+		msg = pad(msg, ": ")
+		msg += fmt.Sprintf("%d", e.ann.WithStatus)
+	}
+
 	if e.err != nil {
 		msg = pad(msg, ": ")
 		msg += e.err.Error()
@@ -237,6 +253,40 @@ func (e annotatedError) Detail() string {
 	}
 
 	return msg
+}
+
+// Fields returns a map of all fields associated with the chain of errors. If a field in an error
+// matches a field in a wrapped error, the field is transformed into a slice and will include
+// the wrapped value.
+func (e annotatedError) Fields() map[string]any {
+	fields := make(map[string]any)
+
+	if e.err != nil {
+		if err, ok := e.err.(FieldsHolder); ok {
+			merge := err.Fields()
+			for k, v := range merge {
+				if s, ok := fields[k]; ok {
+					fields[k] = []any{v, s}
+				} else {
+					fields[k] = v
+				}
+			}
+		}
+	}
+
+	for k, v := range e.ann.WithFields {
+		if s, ok := fields[k]; ok {
+			fields[k] = []any{v, s}
+		} else {
+			fields[k] = v
+		}
+	}
+
+	if len(fields) > 0 {
+		return fields
+	}
+
+	return nil
 }
 
 // Unwrap returns the current error's underlying error, if there is one.
