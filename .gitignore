@@ -9,6 +9,7 @@
 !*.html
 !*.css
 !*.sh
+!*.md
 
 # Whitelist specific filenames
 !*.gitignore
