@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -13,8 +12,6 @@ import (
 )
 
 const claimsKey contextKey = "claims"
-
-var signKey, _ = auth.GenerateSymmetricKey()
 
 var tokensMutex = sync.Mutex{}
 var tokens = make(map[auth.BearerToken]auth.Claims)
@@ -52,7 +49,7 @@ type AuthResponse struct {
 func (env Env) Authorize(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		token := r.Header.Get("Authorization")
-		claims, err := signKey.Verify(auth.JWT(token))
+		claims, err := env.SignKey.Verify(auth.JWT(token))
 		if err != nil {
 			prob := errors.Annotation{WithStatus: http.StatusUnauthorized, WithDetail: "couldn't verify token"}.Wrap(err)
 			handleError(w, prob, env.Logger)
@@ -60,7 +57,12 @@ func (env Env) Authorize(next http.Handler) http.Handler {
 			return
 		}
 
-		fmt.Printf("try\n")
+		if !claims.IsValid(time.Now()) {
+			prob := errors.Annotation{}.Wrap(errors.New("expired claims"))
+			handleError(w, prob, env.Logger)
+
+			return
+		}
 
 		ctx := context.WithValue(r.Context(), claimsKey, claims)
 
@@ -90,7 +92,7 @@ func (env Env) Login(w http.ResponseWriter, r *http.Request) {
 
 		AddClaims(refreshToken, claims)
 
-		accessToken, err := signKey.Sign(claims, time.Now(), duration)
+		accessToken, err := env.SignKey.Sign(claims, time.Now(), duration)
 		if err != nil {
 			return statusInternal.Wrap(err)
 		}
@@ -138,7 +140,7 @@ func (env Env) Token(w http.ResponseWriter, r *http.Request) {
 			//return nil
 		}
 
-		if claims.IsExpired(time.Now()) {
+		if !claims.IsValid(time.Now()) {
 			return errors.Annotation{
 				WithOp:     "Auth",
 				WithStatus: http.StatusUnauthorized,
@@ -146,7 +148,7 @@ func (env Env) Token(w http.ResponseWriter, r *http.Request) {
 			}.Wrap(errors.New("refresh token claims are expired"))
 		}
 
-		resp, prob := generateTokens(claims)
+		resp, prob := generateTokens(env.SignKey, claims)
 		if prob != nil {
 			return prob
 		}
@@ -163,7 +165,7 @@ func (env Env) Token(w http.ResponseWriter, r *http.Request) {
 	handleError(w, err, env.Logger)
 }
 
-func generateTokens(claims auth.Claims) (*AuthResponse, errors.Error) {
+func generateTokens(signKey auth.SymmetricKey, claims auth.Claims) (*AuthResponse, errors.Error) {
 	refreshToken, err := auth.NewBearerToken()
 	if err != nil {
 		return nil, statusInternal.Wrap(err)

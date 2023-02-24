@@ -20,9 +20,9 @@ type Claims struct {
 	IssuedAt  int64 `json:"iat"` // RFC 7519 4.1.6
 }
 
-// IsExpired returns true if the claims are no longer valid.
-func (c Claims) IsExpired(now time.Time) bool {
-	return c.NotBefore <= now.Unix() && c.Expiry <= now.Unix()
+// IsValid returns true if the claims are valid at the given time.
+func (c Claims) IsValid(now time.Time) bool {
+	return c.NotBefore <= now.Unix() && c.Expiry >= now.Unix()
 }
 
 // ReadBytes reads size bytes from /dev/urandom.

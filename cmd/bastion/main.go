@@ -68,10 +68,17 @@ func serve(prefixDir string, config configServer) int {
 		return 1
 	}
 
+	signKey, err := auth.GenerateSymmetricKey()
+	if err != nil {
+		logger.Printf(log.Error, "failed to generate auth key: %v", err)
+		return 1
+	}
+
 	env := handlers.Env{
-		Store:  store,
-		Logger: logger,
-		Auth:   simpleAuth,
+		Store:   store,
+		Logger:  logger,
+		Auth:    simpleAuth,
+		SignKey: signKey,
 	}
 
 	r, err := newRouter(staticFileServer, env)

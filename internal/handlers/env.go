@@ -13,9 +13,12 @@ import (
 // Env stores all application state that isn't request specific. All fields
 // must be safe for concurrent use.
 type Env struct {
-	Auth   auth.Authenticator
 	Store  content.Store
 	Logger log.Logger
+
+	// TODO: split this into a separate environment for auth-only endpoints.
+	Auth    auth.Authenticator
+	SignKey auth.SymmetricKey
 }
 
 var statusInternal = errors.Annotation{WithStatus: http.StatusInternalServerError}
