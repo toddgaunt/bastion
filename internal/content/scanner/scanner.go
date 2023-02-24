@@ -85,7 +85,7 @@ func (m *Scanner) GetDetails() content.Details {
 }
 
 // generateArticles walks a directory, and generates articles from
-// subdirectories and markdown files found.
+// subdirectories and files found.
 func generateArticles(dirpath string) (map[string]content.Article, error) {
 	articles := make(map[string]content.Article)
 
