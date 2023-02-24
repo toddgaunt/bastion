@@ -21,10 +21,14 @@ type Article struct {
 	Pinned      bool
 	Created     time.Time
 	Updated     time.Time
-	HTML        template.HTML
 
-	// Original markdown content of the article
-	Markdown []byte
+	// Format of the text
+	Format string
+	// Original text content of the article
+	Text []byte
+
+	// HTML generated from the original article source
+	HTML template.HTML
 
 	Err error
 }

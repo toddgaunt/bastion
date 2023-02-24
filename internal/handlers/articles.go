@@ -60,7 +60,7 @@ func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
 				}.Wrap(article.Err)
 			}
 
-			markdown = article.Markdown
+			markdown = article.Text
 			vars = templateVariables{
 				Title:       article.Title,
 				Description: article.Description,

@@ -133,7 +133,7 @@ func generateArticles(dirpath string) (map[string]content.Article, error) {
 		}
 
 		// Marshal here rather than use the bytes directly
-		article.Markdown, err = content.MarshalDocument(doc)
+		article.Text, err = content.MarshalDocument(doc)
 		if err != nil {
 			return err
 		}
