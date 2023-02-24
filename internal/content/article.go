@@ -22,8 +22,6 @@ type Article struct {
 	Created     time.Time
 	Updated     time.Time
 
-	// Format of the text
-	Format string
 	// Original text content of the article
 	Text []byte
 

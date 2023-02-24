@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/gomarkdown/markdown"
+	"github.com/gomarkdown/markdown/parser"
 	"github.com/toddgaunt/bastion/internal/errors"
 )
 
@@ -110,6 +111,7 @@ func (doc *Document) GenerateHTML() (template.HTML, error) {
 	buf := &strings.Builder{}
 
 	headerTemplate.Execute(buf, vars)
+	buf.WriteRune('\n')
 	switch strings.ToLower(doc.Format) {
 	case "text":
 		// An HTML template ensures the text content doesn't escape <pre> tags
@@ -119,7 +121,10 @@ func (doc *Document) GenerateHTML() (template.HTML, error) {
 	case "html":
 		_, _ = buf.Write(doc.Content)
 	case "markdown":
-		_, _ = buf.Write(markdown.ToHTML(doc.Content, nil, nil))
+		// A new parser needs to be created for a document each time.
+		markdownExtensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.MathJax
+		p := parser.NewWithExtensions(markdownExtensions)
+		_, _ = buf.Write(markdown.ToHTML(doc.Content, p, nil))
 	}
 	buf.WriteString(footerHTML)
 
