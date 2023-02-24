@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/toddgaunt/bastion/internal/auth"
@@ -26,7 +25,6 @@ var statusUnauthorized = errors.Annotation{WithStatus: http.StatusUnauthorized}
 // handleError takes an error from a function and extracts out any annotations
 // from it to decorate a logger and fill out a ProblemJSON response.
 func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
-	fmt.Printf("%v\n", err)
 	if err == nil {
 		return
 	}
