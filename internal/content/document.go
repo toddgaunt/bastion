@@ -24,6 +24,20 @@ const headerHTML = `<article>
 const footerHTML = `</div>
 </article>`
 
+const mathJaxHTML = `<script>
+MathJax = {
+	tex: {
+		inlineMath: [['$', '$'], ['\\(', '\\)']]
+	},
+	svg: {
+		fontCache: 'global'
+	}
+};
+</script>
+<script type="text/javascript" id="MathJax-script" async
+	src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+</script>`
+
 var headerTemplate = template.Must(template.New("header").Parse(headerHTML))
 var textTemplate = template.Must(template.New("text").Parse(`<pre>{{.}}</pre>`))
 
@@ -112,6 +126,12 @@ func (doc *Document) GenerateHTML() (template.HTML, error) {
 
 	headerTemplate.Execute(buf, vars)
 	buf.WriteRune('\n')
+
+	if doc.Properties.Has("Tag", "Math") {
+		buf.WriteString(mathJaxHTML)
+		buf.WriteRune('\n')
+	}
+
 	switch strings.ToLower(doc.Format) {
 	case "text":
 		// An HTML template ensures the text content doesn't escape <pre> tags
@@ -144,7 +164,24 @@ func (p Properties) Add(key, value string) {
 	p[key] = append(values, value)
 }
 
-// Value returns the first value associated with a key
+// Has returns true if the given key has the value associated with it. If the
+// key doesn't exist, or no values are associated with the key then false is
+// returned.
+func (p Properties) Has(key string, value string) bool {
+	values, ok := p[strings.ToLower(key)]
+	if !ok {
+		return false
+	}
+
+	for _, v := range values {
+		if v == value {
+			return true
+		}
+	}
+	return false
+}
+
+// Value returns the first value associated with a key.
 func (p Properties) Value(key string) string {
 	values, ok := p[strings.ToLower(key)]
 	if !ok {
@@ -153,7 +190,7 @@ func (p Properties) Value(key string) string {
 	return values[0]
 }
 
-// Values returns all of the values associated with a key
+// Values returns all of the values associated with a key.
 func (p Properties) Values(key string) []string {
 	values, ok := p[strings.ToLower(key)]
 	if !ok {
