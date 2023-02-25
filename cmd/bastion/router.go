@@ -37,7 +37,7 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 
 	r.Route("/.auth", func(r chi.Router) {
 		r.Get("/login", env.Login)
-		r.Post("/refresh_token", env.Token)
+		r.Post("/token", env.Token)
 	})
 
 	return r, nil

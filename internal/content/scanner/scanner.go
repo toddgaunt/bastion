@@ -17,6 +17,9 @@ import (
 	"github.com/toddgaunt/bastion/internal/log"
 )
 
+// Scanner reads documents from the filesystem on an interval and creates
+// articles from them. Each document is related to an article with a shared
+// key.
 type Scanner struct {
 	Interval int
 	Logger   log.Logger
@@ -26,11 +29,12 @@ type Scanner struct {
 	articleMap map[string]content.Article
 }
 
-func (m *Scanner) Get(key string) (content.Article, error) {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+// Get returns a single article associated with the given key.
+func (s *Scanner) Get(key string) (content.Article, error) {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
-	article, ok := m.articleMap[key]
+	article, ok := s.articleMap[key]
 	if !ok {
 		return content.Article{}, errors.New("article does not exist")
 	}
@@ -38,8 +42,9 @@ func (m *Scanner) Get(key string) (content.Article, error) {
 	return article, nil
 }
 
-func (m *Scanner) Update(key string, doc content.Document) error {
-	article, err := m.Get(key)
+// Update modifies the underlying document associated with the given key.
+func (s *Scanner) Update(key string, doc content.Document) error {
+	article, err := s.Get(key)
 	if err != nil {
 		return err
 	}
@@ -57,12 +62,13 @@ func (m *Scanner) Update(key string, doc content.Document) error {
 	return nil
 }
 
-func (m *Scanner) GetAll(pinned bool) []content.Article {
-	m.mutex.RLock()
-	defer m.mutex.RUnlock()
+// GetAll returns all documents from the scanner.
+func (s *Scanner) GetAll(pinned bool) []content.Article {
+	s.mutex.RLock()
+	defer s.mutex.RUnlock()
 
 	list := []content.Article{}
-	for _, v := range m.articleMap {
+	for _, v := range s.articleMap {
 		// Only add pinned articles to the list
 		if v.Pinned == pinned {
 			list = append(list, v)
@@ -80,8 +86,9 @@ func (m *Scanner) GetAll(pinned bool) []content.Article {
 	return list
 }
 
-func (m *Scanner) GetDetails() content.Details {
-	return m.Details
+// GetDetails returns the details of the content of the scanner.
+func (s *Scanner) GetDetails() content.Details {
+	return s.Details
 }
 
 // generateArticles walks a directory, and generates articles from

@@ -7,7 +7,8 @@ import (
 )
 
 var defaultConfig = configServer{
-	Credentials: configCredentials{
+	Authentication: configAuthentication{
+		Disabled: true,
 		Username: configVariable{
 			Location: "env",
 			Value:    "BASTION_USERNAME",
@@ -35,12 +36,13 @@ var defaultConfig = configServer{
 
 // configServer is the top-level configuration object.
 type configServer struct {
-	Credentials configCredentials `json:"credentials"`
-	Content     configContent     `json:"content"`
-	Network     configNetwork     `json:"network"`
+	Authentication configAuthentication `json:"authentication"`
+	Content        configContent        `json:"content"`
+	Network        configNetwork        `json:"network"`
 }
 
-type configCredentials struct {
+type configAuthentication struct {
+	Disabled bool           `json:"disabled"`
 	Username configVariable `json:"username"`
 	Password configVariable `json:"password"`
 }

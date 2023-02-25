@@ -28,6 +28,8 @@ func New() Logger {
 	logger, _ := zap.NewProduction()
 	defer logger.Sync() // flushes buffer, if any
 	sugar := logger.Sugar()
+	// Add another level of caller skip since we wrap all of the zap log functions.
+	sugar = sugar.WithOptions(zap.AddCallerSkip(1))
 	return &wrapper{sugar}
 }
 

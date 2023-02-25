@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi"
 	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
+	"github.com/toddgaunt/bastion/internal/log"
 )
 
 type contextKey string
@@ -44,19 +45,19 @@ func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
 			article, err := env.Store.Get(articleKey)
 
 			if err != nil {
-				return errors.Annotation{
-					WithOp:     op,
-					WithTitle:  "Article Not Found",
-					WithStatus: http.StatusNotFound,
-					WithDetail: fmt.Sprintf("No article located at %s", articleKey),
+				return errors.Note{
+					Op:         op,
+					Title:      "Article Not Found",
+					StatusCode: http.StatusNotFound,
+					Detail:     fmt.Sprintf("No article located at %s", articleKey),
 				}.Wrap(errors.New("article not in map"))
 			}
 
 			if article.Err != nil {
-				return errors.Annotation{
-					WithOp:     op,
-					WithTitle:  "Article Generation Error",
-					WithStatus: http.StatusInternalServerError,
+				return errors.Note{
+					Op:         op,
+					Title:      "Article Generation Error",
+					StatusCode: http.StatusInternalServerError,
 				}.Wrap(article.Err)
 			}
 
@@ -109,27 +110,29 @@ func (env Env) UpdateDocument(w http.ResponseWriter, r *http.Request) {
 
 		bytes, err := io.ReadAll(r.Body)
 		if err != nil {
-			return errors.Annotation{
-				WithStatus: http.StatusInternalServerError,
-				WithDetail: "failed to read request",
+			return errors.Note{
+				StatusCode: http.StatusInternalServerError,
+				Detail:     "failed to read request",
 			}.Wrap(err)
 		}
 
 		doc, err := content.UnmarshalDocument(bytes)
 		if err != nil {
-			return errors.Annotation{
-				WithStatus: http.StatusBadRequest,
-				WithDetail: "failed to parse document",
+			return errors.Note{
+				StatusCode: http.StatusBadRequest,
+				Detail:     "failed to parse document",
 			}.Wrap(err)
 		}
 
 		err = env.Store.Update(articleID, doc)
 		if err != nil {
-			errors.Annotation{
-				WithStatus: http.StatusInternalServerError,
-				WithDetail: "failed to update document",
+			errors.Note{
+				StatusCode: http.StatusInternalServerError,
+				Detail:     "failed to update document",
 			}.Wrap(err)
 		}
+
+		env.Logger.With("articleID", articleID).Print(log.Info, "Updated Document")
 
 		w.WriteHeader(http.StatusOK)
 

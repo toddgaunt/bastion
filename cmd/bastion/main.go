@@ -11,100 +11,12 @@ import (
 	"sync"
 
 	"github.com/toddgaunt/bastion/internal/auth"
+	"github.com/toddgaunt/bastion/internal/clock"
 	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/content/scanner"
 	"github.com/toddgaunt/bastion/internal/handlers"
 	"github.com/toddgaunt/bastion/internal/log"
 )
-
-func isFlagPassed(name string) bool {
-	found := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == name {
-			found = true
-		}
-	})
-	return found
-}
-
-func serve(prefixDir string, config configServer) int {
-	var done chan bool
-	var wg = &sync.WaitGroup{}
-
-	logger := log.New()
-
-	dir := path.Clean(prefixDir)
-	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
-
-	details := content.Details{
-		Name:        config.Content.Name,
-		Description: config.Content.Description,
-		Style:       config.Content.Style,
-	}
-
-	store := &scanner.Scanner{
-		Interval: config.Content.ScanInterval,
-		Logger:   logger,
-		Details:  details,
-	}
-
-	store.Start(dir+"/content", done, wg)
-
-	username, err := config.Credentials.Username.Load()
-	if err != nil {
-		logger.Printf(log.Error, "username: %v", err)
-		return 1
-	}
-
-	password, err := config.Credentials.Password.Load()
-	if err != nil {
-		logger.Printf(log.Error, "password: %v", err)
-		return 1
-	}
-
-	simpleAuth, err := auth.NewSimple(username, password)
-	if err != nil {
-		logger.Printf(log.Error, "new simple auth: %v", err)
-		return 1
-	}
-
-	signKey, err := auth.GenerateSymmetricKey()
-	if err != nil {
-		logger.Printf(log.Error, "failed to generate auth key: %v", err)
-		return 1
-	}
-
-	env := handlers.Env{
-		Store:   store,
-		Logger:  logger,
-		Auth:    simpleAuth,
-		SignKey: signKey,
-	}
-
-	r, err := newRouter(staticFileServer, env)
-	if err != nil {
-		logger.Printf(log.Error, "couldn't create router: %v", err)
-		return 1
-	}
-
-	addr := fmt.Sprintf(":%d", config.Network.Port)
-
-	logger.Printf(log.Info, "Serving on port %d\n", config.Network.Port)
-
-	if !config.Network.TLS.Disable && (config.Network.TLS.Cert != "" && config.Network.TLS.Key != "") {
-		// TLS can be used
-		logger.Print(log.Fatal, http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
-	} else {
-		logger.Print(log.Warn, "TLS is disabled")
-		// Allow non-TLS for use until a certificate can be acquired
-		logger.Print(log.Fatal, http.ListenAndServe(addr, r))
-	}
-
-	// Closing this channel signals all worker threads to stop and cleanup.
-	close(done)
-	wg.Wait()
-	return 0
-}
 
 func main() {
 	var port int
@@ -167,4 +79,95 @@ func main() {
 
 	// Run the server
 	os.Exit(serve(prefixDir, config))
+}
+
+func isFlagPassed(name string) bool {
+	found := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == name {
+			found = true
+		}
+	})
+	return found
+}
+
+func serve(prefixDir string, config configServer) int {
+	var done chan bool
+	var wg = &sync.WaitGroup{}
+
+	logger := log.New()
+
+	dir := path.Clean(prefixDir)
+	staticFileServer := http.FileServer(http.Dir(dir + "/static"))
+
+	details := content.Details{
+		Name:        config.Content.Name,
+		Description: config.Content.Description,
+		Style:       config.Content.Style,
+	}
+
+	store := &scanner.Scanner{
+		Interval: config.Content.ScanInterval,
+		Logger:   logger,
+		Details:  details,
+	}
+
+	store.Start(dir+"/content", done, wg)
+
+	var authenticator auth.Authenticator
+	if config.Authentication.Disabled {
+		logger.Print(log.Warn, "Authentication is disabled")
+		authenticator = auth.NewDisabled()
+	} else {
+		username, err := config.Authentication.Username.Load()
+		if err != nil {
+			logger.Printf(log.Fatal, "authentication.username: %v", err)
+		}
+
+		password, err := config.Authentication.Password.Load()
+		if err != nil {
+			logger.Printf(log.Fatal, "authentication.password: %v", err)
+		}
+
+		authenticator, err = auth.NewSimple(username, password)
+		if err != nil {
+			logger.Printf(log.Fatal, "failed to create authenticator: %v", err)
+		}
+	}
+
+	signKey, err := auth.GenerateSymmetricKey()
+	if err != nil {
+		logger.Printf(log.Fatal, "failed to generate auth key: %v", err)
+	}
+
+	env := handlers.Env{
+		Store:   store,
+		Logger:  logger,
+		Clock:   clock.Local(),
+		Auth:    authenticator,
+		SignKey: signKey,
+	}
+
+	r, err := newRouter(staticFileServer, env)
+	if err != nil {
+		logger.Printf(log.Fatal, "couldn't create router: %v", err)
+	}
+
+	addr := fmt.Sprintf(":%d", config.Network.Port)
+
+	if !config.Network.TLS.Disable && (config.Network.TLS.Cert != "" && config.Network.TLS.Key != "") {
+		// TLS can be used
+		logger.Printf(log.Info, "serving with TLS on port %d\n", config.Network.Port)
+		logger.Print(log.Fatal, http.ListenAndServeTLS(addr, config.Network.TLS.Cert, config.Network.TLS.Key, r))
+	} else {
+		logger.Print(log.Warn, "TLS is disabled")
+		logger.Printf(log.Info, "serving without TLS on port %d\n", config.Network.Port)
+		// Allow non-TLS for use until a certificate can be acquired
+		logger.Print(log.Fatal, http.ListenAndServe(addr, r))
+	}
+
+	// Closing this channel signals all worker threads to stop and cleanup.
+	close(done)
+	wg.Wait()
+	return 0
 }

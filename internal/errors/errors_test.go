@@ -13,7 +13,7 @@ func TestAnnotationWrap(t *testing.T) {
 
 	testCases := []struct {
 		name string
-		ann  errors.Annotation
+		ann  errors.Note
 
 		want       string
 		wantOp     string
@@ -25,8 +25,8 @@ func TestAnnotationWrap(t *testing.T) {
 	}{
 		{
 			name: "operation",
-			ann: errors.Annotation{
-				WithOp: "operation",
+			ann: errors.Note{
+				Op: "operation",
 			},
 
 			want:   fmt.Sprintf("operation: %s", err.Error()),
@@ -34,8 +34,8 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "type",
-			ann: errors.Annotation{
-				WithType: "type",
+			ann: errors.Note{
+				Type: "type",
 			},
 
 			want:     fmt.Sprintf("type: %s", err.Error()),
@@ -43,8 +43,8 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "title",
-			ann: errors.Annotation{
-				WithTitle: "title",
+			ann: errors.Note{
+				Title: "title",
 			},
 
 			want:      fmt.Sprintf("title: %s", err.Error()),
@@ -52,8 +52,8 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "status",
-			ann: errors.Annotation{
-				WithStatus: 200,
+			ann: errors.Note{
+				StatusCode: 200,
 			},
 
 			want:       fmt.Sprintf("200: %s", err.Error()),
@@ -61,8 +61,8 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "detail",
-			ann: errors.Annotation{
-				WithDetail: "detail",
+			ann: errors.Note{
+				Detail: "detail",
 			},
 
 			want:       err.Error(),
@@ -70,8 +70,8 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "fields",
-			ann: errors.Annotation{
-				WithFields: map[string]any{
+			ann: errors.Note{
+				Fields: map[string]any{
 					"string": "hello world",
 					"bool":   true,
 					"int":    25,
@@ -87,13 +87,13 @@ func TestAnnotationWrap(t *testing.T) {
 		},
 		{
 			name: "allFields",
-			ann: errors.Annotation{
-				WithOp:     "operation",
-				WithType:   "type",
-				WithTitle:  "title",
-				WithStatus: 400,
-				WithDetail: "detail",
-				WithFields: map[string]any{
+			ann: errors.Note{
+				Op:         "operation",
+				Type:       "type",
+				Title:      "title",
+				StatusCode: 400,
+				Detail:     "detail",
+				Fields: map[string]any{
 					"string": "hello world",
 					"bool":   true,
 					"int":    25,
@@ -160,14 +160,14 @@ func TestNestedFields(t *testing.T) {
 		"int":    []any{24, 25},
 	}
 
-	err := errors.Annotation{
-		WithFields: map[string]any{
+	err := errors.Note{
+		Fields: map[string]any{
 			"string": "hello darkness",
 			"bool":   true,
 			"int":    24,
 		},
-	}.Wrap(errors.Annotation{
-		WithFields: map[string]any{
+	}.Wrap(errors.Note{
+		Fields: map[string]any{
 			"string": "my old field",
 			"bool":   false,
 			"int":    25,

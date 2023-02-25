@@ -39,10 +39,10 @@ func (env Env) Problems(w http.ResponseWriter, r *http.Request) {
 		case "internal-server-error":
 			description = `The server experienced an error which was no fault of the client`
 		default:
-			return errors.Annotation{
-				WithOp:     op,
-				WithStatus: http.StatusNotFound,
-				WithDetail: fmt.Sprintf("Documenation for %s is not available", problemID),
+			return errors.Note{
+				Op:         op,
+				StatusCode: http.StatusNotFound,
+				Detail:     fmt.Sprintf("Documenation for %s is not available", problemID),
 			}.Wrap(errors.New("problem not registered"))
 		}
 

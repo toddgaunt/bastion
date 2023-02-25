@@ -45,17 +45,17 @@ func (key SymmetricKey) Sign(claims Claims, now time.Time, lifetime time.Duratio
 func (key SymmetricKey) Verify(token JWT) (Claims, error) {
 	authJSON, JWTHeader, err := jose.DecodeBytes(string(token), key[0:keySize])
 	if err != nil {
-		return Claims{}, errors.Annotation{
-			WithType: ErrJWTDecode,
+		return Claims{}, errors.Note{
+			Type: ErrJWTDecode,
 		}.Wrap(err)
 	}
 
 	// Verify that the token was signed using the right algorithm.
 	algo, ok := JWTHeader["alg"].(string)
 	if !ok || algo != signAlgo {
-		return Claims{}, errors.Annotation{
-			WithType:   ErrJWTBadAlgo,
-			WithDetail: fmt.Sprintf("only the the %s signature algorithm is supported", signAlgo),
+		return Claims{}, errors.Note{
+			Type:   ErrJWTBadAlgo,
+			Detail: fmt.Sprintf("only the the %s signature algorithm is supported", signAlgo),
 		}.Wrap(errors.Errorf("unsupported algorithm %s", algo))
 	}
 

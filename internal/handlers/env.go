@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/toddgaunt/bastion/internal/auth"
+	"github.com/toddgaunt/bastion/internal/clock"
 	"github.com/toddgaunt/bastion/internal/content"
 	"github.com/toddgaunt/bastion/internal/errors"
 	"github.com/toddgaunt/bastion/internal/log"
@@ -15,15 +16,16 @@ import (
 type Env struct {
 	Store  content.Store
 	Logger log.Logger
+	Clock  clock.Provider
 
 	// TODO: split this into a separate environment for auth-only endpoints.
 	Auth    auth.Authenticator
 	SignKey auth.SymmetricKey
 }
 
-var statusInternal = errors.Annotation{WithStatus: http.StatusInternalServerError}
-var statusBadRequest = errors.Annotation{WithStatus: http.StatusBadRequest}
-var statusUnauthorized = errors.Annotation{WithStatus: http.StatusUnauthorized}
+var statusInternal = errors.Note{StatusCode: http.StatusInternalServerError}
+var statusBadRequest = errors.Note{StatusCode: http.StatusBadRequest}
+var statusUnauthorized = errors.Note{StatusCode: http.StatusUnauthorized}
 
 // handleError takes an error from a function and extracts out any annotations
 // from it to decorate a logger and fill out a ProblemJSON response.
@@ -108,9 +110,7 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 
 	logger.Print(logLevel, err.Error())
 
-	// MarshalIndent is used since problems are meant to be as human
-	// readable as possible. They aren't worth minifying.
-	body, _ := json.MarshalIndent(problem, "", "\t")
+	body, _ := json.Marshal(problem)
 	w.Header().Add("Content-Type", "application/problem+json")
 	w.WriteHeader(problem.Status)
 	w.Write(body)
