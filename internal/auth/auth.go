@@ -22,7 +22,7 @@ type Claims struct {
 
 // IsValid returns true if the claims are valid at the given time.
 func (c Claims) IsValid(now time.Time) bool {
-	return c.NotBefore <= now.Unix() && c.Expiry >= now.Unix()
+	return c.NotBefore <= now.Unix() && c.Expiry > now.Unix()
 }
 
 // ReadBytes reads size bytes from /dev/urandom.
