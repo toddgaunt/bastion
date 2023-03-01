@@ -4,11 +4,6 @@ import (
 	"encoding/base64"
 )
 
-const (
-	httpHeaderKey         = "Authorization"
-	httpHeaderValuePrefix = "Bearer "
-)
-
 // BearerToken is a base64 encoded string.
 type BearerToken string
 
