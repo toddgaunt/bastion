@@ -27,7 +27,8 @@ const footerHTML = `</div>
 const mathJaxHTML = `<script>
 MathJax = {
 	tex: {
-		inlineMath: [['$', '$'], ['\\(', '\\)']]
+		inlineMath: [['$', '$'], ['\\(', '\\)']],
+		processEscapes: true
 	},
 	svg: {
 		fontCache: 'global'
@@ -127,7 +128,9 @@ func (doc *Document) GenerateHTML() (template.HTML, error) {
 	headerTemplate.Execute(buf, vars)
 	buf.WriteRune('\n')
 
-	if doc.Properties.Has("Tag", "Math") {
+	mathJax := doc.Properties.Has("Tag", "Math")
+
+	if mathJax {
 		buf.WriteString(mathJaxHTML)
 		buf.WriteRune('\n')
 	}
@@ -142,7 +145,21 @@ func (doc *Document) GenerateHTML() (template.HTML, error) {
 		_, _ = buf.Write(doc.Content)
 	case "markdown":
 		// A new parser needs to be created for a document each time.
-		markdownExtensions := parser.CommonExtensions | parser.AutoHeadingIDs | parser.MathJax
+		markdownExtensions := parser.NoIntraEmphasis |
+			parser.Tables |
+			parser.FencedCode |
+			parser.Autolink |
+			parser.Strikethrough |
+			parser.SpaceHeadings |
+			parser.HeadingIDs |
+			parser.BackslashLineBreak |
+			parser.DefinitionLists |
+			parser.AutoHeadingIDs
+
+		if mathJax {
+			markdownExtensions |= parser.MathJax
+		}
+
 		p := parser.NewWithExtensions(markdownExtensions)
 		_, _ = buf.Write(markdown.ToHTML(doc.Content, p, nil))
 	}
