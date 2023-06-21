@@ -14,7 +14,7 @@ FMT_GREEN="$(tput setaf 2)"
 FMT_YELLOW="$(tput setaf 3)"
 
 package_files=("bastion" "docs" "LICENSE" "www.example.com")
-package="bastion.tar.gz"
+package="bastion-$(cat VERSION.txt).tar.gz"
 
 function log() {
 	echo "[${FMT_GREEN}${me}:info${FMT_NONE}] $*"
