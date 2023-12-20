@@ -27,11 +27,11 @@ func (vars templateVariables) Index() []content.Article {
 }
 
 var (
-	//go:embed problems.html
+	//go:embed templates/problems.html
 	problemTemplateString string
-	//go:embed index.html
+	//go:embed templates/index.html
 	indexTemplateString string
-	//go:embed articles.html
+	//go:embed templates/articles.html
 	articleTemplateString string
 )
 
