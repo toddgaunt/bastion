@@ -25,7 +25,7 @@ func (t Type) Type() Type {
 	return t
 }
 
-// itle is a human readable title for an error.
+// Title is a human readable title for an error.
 type Title string
 
 // As finds the first error in err's chain that matches target, and if one is
@@ -268,9 +268,9 @@ func (e annotatedError) Detail() string {
 	return msg
 }
 
-// Fields returns a map of all fields associated with the chain of errors. If a field in an error
-// matches a field in a wrapped error, the field is transformed into a slice and will include
-// the wrapped value.
+// Fields returns a map of all fields associated with the chain of errors. If a
+// field in an error matches a field in a wrapped error, the field is
+// transformed into a slice and will include the wrapped value.
 func (e annotatedError) Fields() map[string]any {
 	fields := make(map[string]any)
 

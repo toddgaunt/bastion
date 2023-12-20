@@ -111,6 +111,7 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 	logger.Print(logLevel, err.Error())
 
 	body, _ := json.Marshal(problem)
+
 	w.Header().Add("Content-Type", "application/problem+json")
 	w.WriteHeader(problem.Status)
 	w.Write(body)
