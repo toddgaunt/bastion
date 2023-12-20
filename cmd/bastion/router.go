@@ -18,6 +18,9 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 	r.NotFound(env.NotFound)
 
 	r.Route("/", func(r chi.Router) {
+		r.Get("/favicon.ico", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, "/.static/favicon.ico", http.StatusMovedPermanently)
+		})
 		r.Get("/", env.Index)
 		r.Group(func(r chi.Router) {
 			r.Use(handlers.ArticlePath)
