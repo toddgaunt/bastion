@@ -18,7 +18,8 @@ type Env struct {
 	Logger log.Logger
 	Clock  clock.Provider
 
-	// TODO: split this into a separate environment for auth-only endpoints.
+	// TODO: split these fields into a separate environment for auth-only endpoints.
+	// type AuthEnv struct
 	Auth    auth.Authenticator
 	SignKey auth.SymmetricKey
 }
