@@ -1,6 +1,6 @@
 module github.com/toddgaunt/bastion
 
-go 1.18
+go 1.21
 
 require (
 	github.com/dvsekhvalnov/jose2go v1.5.0

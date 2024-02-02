@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// Authenticator is the basic interface used for authenticating a user.
 type Authenticator interface {
 	Authenticate(username, password string) (Claims, error)
 }

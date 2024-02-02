@@ -2,7 +2,6 @@ package scanner
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -127,7 +126,7 @@ func generateArticles(dirpath string) (map[string]content.Article, error) {
 			}
 		}()
 
-		bytes, err := ioutil.ReadFile(documentPath)
+		bytes, err := os.ReadFile(documentPath)
 		if err != nil {
 			article.Err = errors.Errorf("failed to load document: %v", err)
 			return nil
