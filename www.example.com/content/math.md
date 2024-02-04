@@ -1,4 +1,5 @@
 Title: Math
+Tag: Math
 === markdown ===
 This article is to test out inline math equations
 
