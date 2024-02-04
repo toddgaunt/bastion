@@ -98,10 +98,10 @@ func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
 	handleError(w, err, env.Logger)
 }
 
-// UpdateDocument returns an HTTP handler function to respond to HTTP requests for
-// an article. The handler will write an HTML representation of an article as
-// a response, or a problemjson response if the article does not exist or there
-// was a problem generating it.
+// UpdateDocument returns an HTTP handler function to respond to HTTP requests
+// to update an article. The handler will update the underlying representation
+// of an article and reply with a 200 OK, or problemjson response if the
+// article does not exist or there was a problem updating it.
 func (env Env) UpdateDocument(w http.ResponseWriter, r *http.Request) {
 	const op = "Update"
 	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
