@@ -61,7 +61,7 @@ func (s *Scanner) Update(key string, doc content.Document) error {
 	return nil
 }
 
-// GetAll returns all documents from the scanner.
+// GetAll returns all articles generated from documents
 func (s *Scanner) GetAll(pinned bool) []content.Article {
 	s.mutex.RLock()
 	defer s.mutex.RUnlock()
@@ -90,8 +90,8 @@ func (s *Scanner) GetDetails() content.Details {
 	return s.Details
 }
 
-// generateArticles walks a directory, and generates articles from
-// subdirectories and files found.
+// generateArticles walks a directory, and generates articles from documents
+// found.
 func generateArticles(dirpath string) (map[string]content.Article, error) {
 	articles := make(map[string]content.Article)
 

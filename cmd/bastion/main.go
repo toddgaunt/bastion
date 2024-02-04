@@ -13,7 +13,7 @@ import (
 	"github.com/toddgaunt/bastion/internal/auth"
 	"github.com/toddgaunt/bastion/internal/clock"
 	"github.com/toddgaunt/bastion/internal/content"
-	"github.com/toddgaunt/bastion/internal/content/scanner"
+	"github.com/toddgaunt/bastion/internal/content/watcher"
 	"github.com/toddgaunt/bastion/internal/handlers"
 	"github.com/toddgaunt/bastion/internal/log"
 )
@@ -106,8 +106,7 @@ func serve(prefixDir string, config configServer) int {
 		Style:       config.Content.Style,
 	}
 
-	store := &scanner.Scanner{
-		Interval: config.Content.ScanInterval,
+	store := &watcher.Watcher{
 		Logger:   logger,
 		Details:  details,
 	}
