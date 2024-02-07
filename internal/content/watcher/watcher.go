@@ -1,7 +1,6 @@
 package watcher
 
 import (
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -20,9 +19,14 @@ import (
 // have been updated interval and creates articles from them. Each document is
 // related to an article with a shared key.
 type Watcher struct {
-	Logger  log.Logger
+	// Path specifies where the watcher should watch for articles
+	Path string
+	// Logger is where logs will be sent.
+	Logger log.Logger
+	// Details
 	Details content.Details
 
+	// Internal state
 	mutex      sync.RWMutex
 	articleMap map[string]content.Article
 }
@@ -89,9 +93,8 @@ func (w *Watcher) GetDetails() content.Details {
 	return w.Details
 }
 
-// articleRoute generates the route to be used by the webserver handler from
-// the root filepath and the path to the document the article was generated
-// from.
+// articleRoute creates the route to an article from the root filepath and the
+// path to the document the article was generated from.
 func articleRoute(root, filePath string) string {
 	return strings.TrimPrefix(strings.TrimSuffix(filePath, path.Ext(filePath)), path.Clean(root))
 }
@@ -142,9 +145,10 @@ func generateArticle(root, filePath string) content.Article {
 	return article
 }
 
-// watchArticles walks a directory, and find all directories and adds them to the
-// watcher. Each document found is used to generate and article.
-func watchArticles(watcher *fsnotify.Watcher, root string) (map[string]content.Article, error) {
+// watchArticles walks a directory to find all subdirectories and add them to
+// the watcher. Each document found within a subdirectory is used to generate
+// an article.
+func watchArticles(root string, watcher *fsnotify.Watcher) (map[string]content.Article, error) {
 	articles := make(map[string]content.Article)
 
 	err := filepath.Walk(root, func(filePath string, info os.FileInfo, err error) error {
@@ -152,9 +156,13 @@ func watchArticles(watcher *fsnotify.Watcher, root string) (map[string]content.A
 			return err
 		}
 
-		name := path.Base(filePath)
+		if filePath == "." {
+			return nil
+		}
 
-		if strings.HasPrefix(name, ".") {
+		filename := path.Base(filePath)
+
+		if strings.HasPrefix(filename, ".") {
 			// Skip "hidden" files and directories, since '.' is reserved for built-in routes
 			if info.IsDir() {
 				return filepath.SkipDir
@@ -162,20 +170,20 @@ func watchArticles(watcher *fsnotify.Watcher, root string) (map[string]content.A
 			return nil
 		}
 
-		// Only directories should be watched. Files shouldn't be watched directly.
+		// Only directories should be watched. Files shouldn't be watched
+		// directly. This allows us to detect when files are added or removed.
 		if info.IsDir() {
 			watcher.Add(filePath)
-			return nil
+		} else {
+			article := generateArticle(root, filePath)
+			articles[article.Route] = article
 		}
-
-		article := generateArticle(root, filePath)
-		articles[article.Route] = article
 
 		return nil
 	})
 
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate articles: %w", err)
+		return nil, err
 	}
 
 	return articles, nil
@@ -198,19 +206,21 @@ func logArticleCreateOrUpdate(article content.Article, op string, logger log.Log
 	}
 }
 
-// Watch starts a goroutine to watch for file updates in the given articlesPath. When an update is detected the
-func (w *Watcher) Start(articlesPath string, done chan bool, wg *sync.WaitGroup) {
+// Watch starts a goroutine to watch for file updates in the given
+// articlesPath. When an update is detected from the filesystem, an event is
+// sent to the goroutine to handle any article generation.
+func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 	wg.Add(1)
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		w.Logger.Print(log.Fatal, "failed to create new watcher: %v", err)
+		w.Logger.Printf(log.Fatal, "failed to create new watcher: %v", err)
 		return
 	}
 
-	articles, err := watchArticles(watcher, articlesPath)
+	articles, err := watchArticles(w.Path, watcher)
 	if err != nil {
-		w.Logger.Print(log.Fatal, "failed to watch articles: %v", err)
+		w.Logger.Printf(log.Fatal, "failed to watch articles: %v", err)
 	}
 
 	for _, article := range articles {
@@ -242,7 +252,7 @@ func (w *Watcher) Start(articlesPath string, done chan bool, wg *sync.WaitGroup)
 						break
 					}
 
-					article := generateArticle(articlesPath, event.Name)
+					article := generateArticle(w.Path, event.Name)
 					logArticleCreateOrUpdate(article, op.String(), w.Logger)
 
 					w.mutex.Lock()
@@ -251,7 +261,7 @@ func (w *Watcher) Start(articlesPath string, done chan bool, wg *sync.WaitGroup)
 				}
 
 				if op.Has(fsnotify.Rename) || op.Has(fsnotify.Remove) {
-					route := articleRoute(articlesPath, event.Name)
+					route := articleRoute(w.Path, event.Name)
 
 					w.Logger.With(
 						"op", "delete",

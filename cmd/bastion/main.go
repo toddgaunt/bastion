@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -52,7 +51,7 @@ func main() {
 	}
 
 	var config configServer
-	data, err := ioutil.ReadFile(prefixDir + "/config.json")
+	data, err := os.ReadFile(prefixDir + "/config.json")
 	if err != nil {
 		logger.Printf(log.Fatal, "couldn't load config: %v", err)
 	}
@@ -107,11 +106,12 @@ func serve(prefixDir string, config configServer) int {
 	}
 
 	store := &watcher.Watcher{
-		Logger:   logger,
-		Details:  details,
+		Path:    dir + "/content",
+		Logger:  logger,
+		Details: details,
 	}
 
-	store.Start(dir+"/content", done, wg)
+	store.Start(done, wg)
 
 	var authenticator auth.Authenticator
 	if config.Authentication.Disabled {
