@@ -189,21 +189,11 @@ func watchArticles(root string, watcher *fsnotify.Watcher) (map[string]content.A
 	return articles, nil
 }
 
-func logArticleCreateOrUpdate(article content.Article, op string, logger log.Logger) {
-	if article.Err == nil {
-		logger.With(
-			"op", op,
-			"status", "ok",
-			"route", article.Route,
-		).Print(log.Info, "watch")
-	} else {
-		logger.With(
-			"op", op,
-			"status", "fail",
-			"route", article.Route,
-			"err", article.Err,
-		).Print(log.Info, "watch")
+func logStatus(b bool) string {
+	if b {
+		return "ok"
 	}
+	return "fail"
 }
 
 // Watch starts a goroutine to watch for file updates in the given
@@ -224,7 +214,11 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 	}
 
 	for _, article := range articles {
-		logArticleCreateOrUpdate(article, "init", w.Logger)
+		w.Logger.With(
+			"op", "init",
+			"route", article.Route,
+			"err", article.Err,
+		).Print(log.Info, "init")
 	}
 
 	w.mutex.Lock()
@@ -238,38 +232,47 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 			case event := <-watcher.Events:
 				op := event.Op
 
+				route := articleRoute(w.Path, event.Name)
+
+				logger := w.Logger.With(
+					"op", op.String(),
+					"route", route,
+				)
+
+				if op.Has(fsnotify.Remove) || op.Has(fsnotify.Rename) {
+					logger.Print(log.Info, "watch")
+
+					w.mutex.Lock()
+					delete(w.articleMap, route)
+					w.mutex.Unlock()
+				}
+
 				if op.Has(fsnotify.Create) || op.Has(fsnotify.Write) {
 					info, err := os.Stat(event.Name)
 					if err != nil {
-						w.Logger.Printf(log.Error, err.Error())
+						logger.With("err", err.Error()).Print(log.Error, "falied to stat")
 						break
 					}
 
 					// Only directories should be watched. Files shouldn't be
+					isDir := info.IsDir()
+					logger = logger.With("dir", isDir)
+
 					// watched directly.
-					if info.IsDir() {
+					if isDir {
+						logger.Print(log.Info, "watch")
 						watcher.Add(event.Name)
 						break
 					}
 
 					article := generateArticle(w.Path, event.Name)
-					logArticleCreateOrUpdate(article, op.String(), w.Logger)
 
-					w.mutex.Lock()
-					w.articleMap[article.Route] = article
-					w.mutex.Unlock()
-				}
-
-				if op.Has(fsnotify.Rename) || op.Has(fsnotify.Remove) {
-					route := articleRoute(w.Path, event.Name)
-
-					w.Logger.With(
-						"op", "delete",
-						"route", route,
+					logger.With(
+						"err", article.Err,
 					).Print(log.Info, "watch")
 
 					w.mutex.Lock()
-					delete(w.articleMap, route)
+					w.articleMap[article.Route] = article
 					w.mutex.Unlock()
 				}
 			case <-done:
