@@ -19,6 +19,8 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 		return
 	}
 
+	logger.Print(log.Error, "handling an error!")
+
 	if err, ok := err.(errors.FieldsHolder); ok {
 		for k, v := range err.Fields() {
 			logger = logger.With(k, v)
@@ -70,7 +72,7 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 	// Log values as structured fields.
 
 	if op != "" {
-		logger = logger.With("op", problem.Type)
+		logger = logger.With("op", op)
 	}
 
 	if problem.Type != "" {

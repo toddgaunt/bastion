@@ -35,7 +35,7 @@ func ArticlePath(next http.Handler) http.Handler {
 // a response, or a problemjson response if the article does not exist or there
 // was a problem generating it.
 func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
-	const op = "Get"
+	const op = "GetArticle"
 	fn := func(w http.ResponseWriter, r *http.Request) errors.Problem {
 		articleID := r.Context().Value(articlesCtxKey).(string)
 
@@ -59,6 +59,36 @@ func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
 					Title:      "Article Generation Error",
 					StatusCode: http.StatusInternalServerError,
 				}.Wrap(article.Err)
+			}
+
+			env.Logger.Printf(log.Info, "%+#v", article)
+
+			// Authentication
+			if article.Authenticator != nil {
+				username, password, ok := r.BasicAuth()
+
+				if !ok {
+					w.Header().Set("Www-Authenticate", `Basic realm="restricted"`)
+					return errors.Note{
+						Op:         op + "/authenticate",
+						Title:      "Unauthorized",
+						StatusCode: http.StatusUnauthorized,
+						Detail:     "user must enter basic auth",
+					}.Wrap(errors.New("user must enter basic auth"))
+				}
+
+				_, err := article.Authenticator.Authenticate(username, password)
+				if err != nil {
+					w.Header().Set("Www-Authenticate", `Basic realm="restricted"`)
+					return errors.Note{
+						Op:         op + "/authenticate",
+						Title:      "Forbidden",
+						StatusCode: http.StatusForbidden,
+						Detail:     "invalid username and password",
+					}.Wrap(err)
+				}
+
+				env.Logger.Print(log.Info, "authentication success")
 			}
 
 			markdown = article.Text

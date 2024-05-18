@@ -5,7 +5,6 @@ import (
 	"path"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 
@@ -93,66 +92,6 @@ func (w *Watcher) GetDetails() content.Details {
 	return w.Details
 }
 
-// articleRoute creates the route to an article from the root filepath and the
-// path to the document the article was generated from. The route does not
-// include the file extension.
-func articleRoute(root, filepath string) string {
-	return strings.TrimPrefix(strings.TrimSuffix(filepath, path.Ext(filepath)), path.Clean(root))
-}
-
-// articlePath returns the key used to find an article in the articleMap. This
-// is similar to the article's route, however it includes the file extension.
-func articlePath(root, filepath string) string {
-	return strings.TrimPrefix(filepath, path.Clean(root))
-}
-
-// generateArticle reads a document from the filesystem and generates an
-// in-memory article for use by the web-server.
-func generateArticle(root, filepath string) content.Article {
-	key := articlePath(root, filepath)
-	route := articleRoute(root, filepath)
-
-	article := content.Article{Path: key, Route: route}
-
-	bytes, err := os.ReadFile(filepath)
-	if err != nil {
-		article.Err = errors.Errorf("failed to load document: %v", err)
-		return article
-	}
-
-	var doc content.Document
-	doc, article.Err = content.UnmarshalDocument(bytes)
-	if article.Err != nil {
-		return article
-	}
-
-	// Marshal here rather than use the bytes directly
-	article.Text, article.Err = content.MarshalDocument(doc)
-	if article.Err != nil {
-		return article
-	}
-
-	article.FilePath = filepath
-	article.Title = doc.Properties.Value("Title")
-	article.Description = doc.Properties.Value("Description")
-	article.Author = doc.Properties.Value("Author")
-
-	pin := strings.ToLower(doc.Properties.Value("Pinned"))
-	if pin != "" {
-		if pin == "true" || pin == "false" {
-			article.Pinned, _ = strconv.ParseBool(pin)
-		} else {
-			article.Err = errors.New("article property 'Pinned' must be true or false")
-		}
-	}
-
-	article.SetTimestamps(doc.Properties.Value("Created"), doc.Properties.Value("Updated"))
-
-	article.HTML, article.Err = doc.GenerateHTML()
-
-	return article
-}
-
 // watchArticles walks a directory to find all subdirectories and add them to
 // the watcher. Each document found within a subdirectory is used to generate
 // an article.
@@ -183,7 +122,7 @@ func watchArticles(root string, watcher *fsnotify.Watcher) (map[string]content.A
 		if info.IsDir() {
 			watcher.Add(filePath)
 		} else {
-			article := generateArticle(root, filePath)
+			article := content.GenerateArticle(root, filePath)
 			articles[article.Path] = article
 		}
 
@@ -240,8 +179,8 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 			case event := <-watcher.Events:
 				op := event.Op
 
-				path := articlePath(w.Path, event.Name)
-				route := articleRoute(w.Path, event.Name)
+				path := content.ArticlePath(w.Path, event.Name)
+				route := content.ArticleRoute(w.Path, event.Name)
 
 				logger := w.Logger.With(
 					"op", op.String(),
@@ -275,7 +214,7 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 						break
 					}
 
-					article := generateArticle(w.Path, event.Name)
+					article := content.GenerateArticle(w.Path, event.Name)
 
 					logger.With(
 						"err", article.Err,
@@ -285,7 +224,7 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 					w.articleMap[article.Path] = article
 					w.mutex.Unlock()
 				}
-			case err, ok := <- watcher.Errors:
+			case err, ok := <-watcher.Errors:
 				logger := w.Logger
 				if ok {
 					logger = logger.With("err", err.Error())

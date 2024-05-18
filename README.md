@@ -7,6 +7,19 @@ Bastion is a simple webserver for serving articles written in markdown. These ma
 articles are converted to html automatically as they are updated, and have a special
 header section to specify useful metadata about the article to Bastion.
 
+## Article Authentication
+Individual articles can require HTTP basic authentication if the article's source document includes values for the Username and Password in the article header.
+
+For example:
+```markdown
+Title: My protected article
+Username: monkey
+Password: bananas
+=== markdown ===
+I want to protect the content of this article with HTTP basic auth so no one
+can steal my secrets!
+```
+
 ## Website layout
 ```
 www.example.com/

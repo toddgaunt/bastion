@@ -142,9 +142,6 @@ type Note struct {
 
 // Wrap annotates err with the values present in the note.
 func (n Note) Wrap(err error) Error {
-	if err == nil {
-		return nil
-	}
 	return annotatedError{n, err}
 }
 

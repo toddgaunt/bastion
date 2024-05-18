@@ -111,7 +111,12 @@ func (env Env) Login(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		enc := json.NewEncoder(w)
-		return statusInternal.Wrap(enc.Encode(resp))
+
+		if err := enc.Encode(resp); err != nil {
+			return statusInternal.Wrap(enc.Encode(resp))
+		}
+
+		return nil
 	}
 
 	err := fn(w, r)
@@ -165,9 +170,14 @@ func (env Env) Token(w http.ResponseWriter, r *http.Request) {
 		w.Header().Add("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		enc := json.NewEncoder(w)
-		return errors.Note{
-			StatusCode: http.StatusInternalServerError,
-		}.Wrap(enc.Encode(resp))
+		if err := enc.Encode(resp); err != nil {
+			return errors.Note{
+				StatusCode: http.StatusInternalServerError,
+			}.Wrap(enc.Encode(resp))
+		}
+
+		return nil
+
 	}
 
 	err := fn(w, r)

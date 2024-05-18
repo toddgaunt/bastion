@@ -2,10 +2,10 @@
 	"content": {
 		"name": "Example",
 		"description": "This is a simple example website",
-		"style": "default",
-		"scan_interval": 60
+		"style": "default"
 	},
 	"authentication": {
+		"disabled": true,
 		"username": {
 			"location": "env",
 			"value": "BASTION_USERNAME"
