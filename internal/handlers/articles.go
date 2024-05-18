@@ -61,8 +61,6 @@ func (env Env) GetArticle(w http.ResponseWriter, r *http.Request) {
 				}.Wrap(article.Err)
 			}
 
-			env.Logger.Printf(log.Info, "%+#v", article)
-
 			// Authentication
 			if article.Authenticator != nil {
 				username, password, ok := r.BasicAuth()
