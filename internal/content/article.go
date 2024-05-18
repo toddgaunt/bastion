@@ -11,6 +11,9 @@ type Article struct {
 	// Filepath is the canonical filepath leading the document source.
 	FilePath string
 
+	// Path is the relative path to the article.
+	Path string
+
 	// Route is the route to the article on the website.
 	Route string
 

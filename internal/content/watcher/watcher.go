@@ -36,7 +36,7 @@ func (w *Watcher) Get(key string) (content.Article, error) {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
 
-	article, ok := w.articleMap[key]
+	article, ok := w.articleMap[key+".md"]
 	if !ok {
 		return content.Article{}, errors.New("article does not exist")
 	}
@@ -94,19 +94,27 @@ func (w *Watcher) GetDetails() content.Details {
 }
 
 // articleRoute creates the route to an article from the root filepath and the
-// path to the document the article was generated from.
-func articleRoute(root, filePath string) string {
-	return strings.TrimPrefix(strings.TrimSuffix(filePath, path.Ext(filePath)), path.Clean(root))
+// path to the document the article was generated from. The route does not
+// include the file extension.
+func articleRoute(root, filepath string) string {
+	return strings.TrimPrefix(strings.TrimSuffix(filepath, path.Ext(filepath)), path.Clean(root))
+}
+
+// articlePath returns the key used to find an article in the articleMap. This
+// is similar to the article's route, however it includes the file extension.
+func articlePath(root, filepath string) string {
+	return strings.TrimPrefix(filepath, path.Clean(root))
 }
 
 // generateArticle reads a document from the filesystem and generates an
 // in-memory article for use by the web-server.
-func generateArticle(root, filePath string) content.Article {
-	route := articleRoute(root, filePath)
+func generateArticle(root, filepath string) content.Article {
+	key := articlePath(root, filepath)
+	route := articleRoute(root, filepath)
 
-	article := content.Article{Route: route}
+	article := content.Article{Path: key, Route: route}
 
-	bytes, err := os.ReadFile(filePath)
+	bytes, err := os.ReadFile(filepath)
 	if err != nil {
 		article.Err = errors.Errorf("failed to load document: %v", err)
 		return article
@@ -124,7 +132,7 @@ func generateArticle(root, filePath string) content.Article {
 		return article
 	}
 
-	article.FilePath = filePath
+	article.FilePath = filepath
 	article.Title = doc.Properties.Value("Title")
 	article.Description = doc.Properties.Value("Description")
 	article.Author = doc.Properties.Value("Author")
@@ -176,7 +184,7 @@ func watchArticles(root string, watcher *fsnotify.Watcher) (map[string]content.A
 			watcher.Add(filePath)
 		} else {
 			article := generateArticle(root, filePath)
-			articles[article.Route] = article
+			articles[article.Path] = article
 		}
 
 		return nil
@@ -232,10 +240,12 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 			case event := <-watcher.Events:
 				op := event.Op
 
+				path := articlePath(w.Path, event.Name)
 				route := articleRoute(w.Path, event.Name)
 
 				logger := w.Logger.With(
 					"op", op.String(),
+					"path", path,
 					"route", route,
 				)
 
@@ -243,7 +253,7 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 					logger.Print(log.Info, "watch")
 
 					w.mutex.Lock()
-					delete(w.articleMap, route)
+					delete(w.articleMap, path)
 					w.mutex.Unlock()
 				}
 
@@ -272,9 +282,15 @@ func (w *Watcher) Start(done chan bool, wg *sync.WaitGroup) {
 					).Print(log.Info, "watch")
 
 					w.mutex.Lock()
-					w.articleMap[article.Route] = article
+					w.articleMap[article.Path] = article
 					w.mutex.Unlock()
 				}
+			case err, ok := <- watcher.Errors:
+				logger := w.Logger
+				if ok {
+					logger = logger.With("err", err.Error())
+				}
+				logger.Print(log.Error, "watcher error")
 			case <-done:
 				break loop
 			}
