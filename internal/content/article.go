@@ -32,6 +32,9 @@ type Article struct {
 	Created     time.Time
 	Updated     time.Time
 
+	// Is the article unlisted?
+	Unlisted bool
+
 	// Does the article require authentication to view?
 	Authenticator auth.Authenticator
 
@@ -113,6 +116,7 @@ func GenerateArticle(root, filepath string) Article {
 	article.Description = doc.Properties.Value("Description")
 	article.Author = doc.Properties.Value("Author")
 
+
 	// Setup authentication for an article
 	username := doc.Properties.Value("Username")
 	password := doc.Properties.Value("Password")
@@ -125,17 +129,27 @@ func GenerateArticle(root, filepath string) Article {
 	}
 
 	pin := strings.ToLower(doc.Properties.Value("Pinned"))
-	if pin != "" {
-		if pin == "true" || pin == "false" {
-			article.Pinned, _ = strconv.ParseBool(pin)
-		} else {
-			article.Err = errors.New("article property 'Pinned' must be true or false")
-		}
-	}
+	article.Pinned, article.Err = toBool(pin)
+
+	unlisted := doc.Properties.Value("Unlisted")
+	article.Unlisted, article.Err = toBool(unlisted)
 
 	article.SetTimestamps(doc.Properties.Value("Created"), doc.Properties.Value("Updated"))
 
 	article.HTML, article.Err = doc.GenerateHTML()
 
 	return article
+}
+
+func toBool(property string) (bool, error) {
+		if property == "" {
+			return false, nil
+		}
+
+		if property == "true" || property == "false" {
+			val, _ := strconv.ParseBool(property)
+			return val, nil
+		}
+
+		return false, fmt.Errorf("article property '%s' must be true or false", property)
 }

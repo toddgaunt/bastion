@@ -63,7 +63,9 @@ func (w *Watcher) Update(key string, doc content.Document) error {
 	return nil
 }
 
-// GetAll returns all articles generated from documents
+// GetAll returns all articles generated from documents that are not unlisted.
+// Only articles with the given value of pinned are returned.
+// TODO: Maybe pass in a string rather than a bool for pinned? That way we can just GetAll("category")?
 func (w *Watcher) GetAll(pinned bool) []content.Article {
 	w.mutex.RLock()
 	defer w.mutex.RUnlock()
@@ -71,7 +73,8 @@ func (w *Watcher) GetAll(pinned bool) []content.Article {
 	list := []content.Article{}
 	for _, v := range w.articleMap {
 		// Only add pinned articles to the list
-		if v.Pinned == pinned {
+		// Don't add unlisted articles
+		if v.Pinned == pinned  && !v.Unlisted {
 			list = append(list, v)
 		}
 	}

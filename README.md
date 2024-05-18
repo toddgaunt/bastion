@@ -7,6 +7,17 @@ Bastion is a simple webserver for serving articles written in markdown. These ma
 articles are converted to html automatically as they are updated, and have a special
 header section to specify useful metadata about the article to Bastion.
 
+## Unlisted Articles
+To host an article but not list it in the main index, the Unlisted property can be set in the article header.
+
+For example:
+```markdown
+Title: My unlisted article
+Unlisted: true
+=== markdown ===
+Even though I don't mind this content being unprotected, I just want it unlisted. It doesn't contain anything sensitive, but I just don't want it on the main index.
+```
+
 ## Article Authentication
 Individual articles can require HTTP basic authentication if the article's source document includes values for the Username and Password in the article header.
 
