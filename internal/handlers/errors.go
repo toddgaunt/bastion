@@ -92,7 +92,7 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 	case problem.Status >= 400 && problem.Status <= 499:
 		logLevel = log.Info
 	case problem.Status >= 500 && problem.Status <= 599:
-		logLevel = log.Info
+		logLevel = log.Error
 	}
 
 	logger.Print(logLevel, err.Error())
