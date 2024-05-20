@@ -45,7 +45,7 @@ function require() {
 
 function build() {
 	log "🔨 building…"
-	go build ./cmd/bastion
+	go build -ldflags "-X github.com/toddgaunt/bastion/internal/errors.ModulePrefix=$(realpath .)/" ./cmd/bastion
 }
 
 function clean() {

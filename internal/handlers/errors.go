@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/toddgaunt/bastion/internal/errors"
@@ -18,8 +19,6 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 	if err == nil {
 		return
 	}
-
-	logger.Print(log.Error, "handling an error!")
 
 	if err, ok := err.(errors.FieldsHolder); ok {
 		for k, v := range err.Fields() {
@@ -86,6 +85,8 @@ func handleError(w http.ResponseWriter, err errors.Problem, logger log.Logger) {
 	if problem.Detail != "" {
 		logger = logger.With("detail", problem.Detail)
 	}
+
+	logger = logger.With("trace", fmt.Sprintf("%v", errors.LocationList(err)))
 
 	logLevel := log.Info
 	switch {

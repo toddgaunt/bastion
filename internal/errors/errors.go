@@ -6,6 +6,8 @@ package errors
 import (
 	"errors"
 	"fmt"
+	"runtime"
+	"strings"
 )
 
 // Op describes an operation, usually as the http.method or logical operation.
@@ -84,6 +86,10 @@ var Unwrap = errors.Unwrap
 // a synonym for %v.
 var Errorf = fmt.Errorf
 
+// ModulePrefix is set during compilation to the module root to make error
+// locations relative rather than absolute.
+var ModulePrefix string
+
 type Error interface {
 	OpHolder
 	TypeHolder
@@ -91,6 +97,7 @@ type Error interface {
 	StatusHolder
 	DetailHolder
 	FieldsHolder
+	LocationHolder
 	error
 }
 
@@ -130,6 +137,16 @@ type OpHolder interface {
 	error
 }
 
+type LocationHolder interface {
+	Location() Location
+	error
+}
+
+type Location struct {
+	file string
+	line int
+}
+
 // Note is a set of fields that can be filled to wrap an error with.
 type Note struct {
 	Op         Op
@@ -140,25 +157,48 @@ type Note struct {
 	Fields     map[string]any
 }
 
+func getLocation() (string, int) {
+	_, file, line, _ := runtime.Caller(2)
+
+	fmt.Println("Module prefix:", ModulePrefix)
+	file, _ = strings.CutPrefix(file, ModulePrefix)
+
+	return file, line
+}
+
 // Wrap annotates err with the values present in the note.
+//
+// The calling function's file and line number is recorded
+// in the returned error and can be retrieved by calling
+// Error.Location()
 func (n Note) Wrap(err error) Error {
-	return annotatedError{n, err}
+	file, line := getLocation()
+
+	return annotatedError{n, file, line, err}
 }
 
-// Wraps creates an error from the provided string and annotates it with the
-// values present in the note.
-func (n Note) Wraps(msg string) Error {
-	return annotatedError{n, New(msg)}
-}
-
-// Wrapf creates an error from the format string and arguments and annotates it
+// Wraps creates an error from the provided string and annotates it
 // with the values present in the note.
+//
+// See Wrap() for more details.
+func (n Note) Wraps(msg string) Error {
+	file, line := getLocation()
+
+	return annotatedError{n, file, line, New(msg)}
+}
+
+// Wrapf creates an error from the format string and arguments and
+// annotates it with the values present in the note.
 func (n Note) Wrapf(format string, args ...any) Error {
-	return annotatedError{n, Errorf(format, args...)}
+	file, line := getLocation()
+
+	return annotatedError{n, file, line, Errorf(format, args...)}
 }
 
 type annotatedError struct {
 	note Note
+	file string
+	line int
 	err  error
 }
 
@@ -299,6 +339,10 @@ func (e annotatedError) Fields() map[string]any {
 	return nil
 }
 
+func (e annotatedError) Location() Location {
+	return Location{e.file, e.line}
+}
+
 // Unwrap returns the current error's underlying error, if there is one.
 func (e annotatedError) Unwrap() error {
 	return e.err
@@ -311,4 +355,17 @@ func (e annotatedError) Is(target error) bool {
 	}
 
 	return false
+}
+
+func LocationList(err error) []Location {
+	var locationList []Location
+	var walk = err
+	for walk != nil {
+		if l, ok := walk.(LocationHolder); ok {
+			locationList = append(locationList, l.Location())
+		}
+		walk = errors.Unwrap(walk)
+	}
+
+	return locationList
 }
