@@ -20,6 +20,9 @@ Even though I don't mind this content being unprotected, I just want it unlisted
 
 ## Article Authentication
 Individual articles can require HTTP basic authentication if the article's source document includes values for the Username and Password in the article header.
+NOTE: this authentication should only be used for weakly protecting access to content. The username and password are stored in plain text in the article source
+file, which is stored in memory by the Bastion server. This means that chances of the credentials being accessible if the host or Bastion server are
+compromised are high.
 
 For example:
 ```markdown
