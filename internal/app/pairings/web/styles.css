@@ -1,0 +1,432 @@
+:root {
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --text: #1c1c1c;
+  --muted: #6b6b6b;
+  --border: #d9d9d6;
+  --accent: #1c1c1c;
+  --accent-text: #ffffff;
+  --warn-bg: #fdf6e3;
+  --warn-border: #e8d9a8;
+  --error: #b42318;
+  --radius: 6px;
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+main {
+  max-width: 540px;
+  margin: 0 auto;
+  padding: 40px 16px 64px;
+}
+
+[hidden] {
+  display: none !important;
+}
+
+/* Typography */
+
+h1 {
+  margin: 0 0 24px;
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+
+h1 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+h2 {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0 0 16px;
+}
+
+.lede {
+  color: var(--muted);
+  margin-bottom: 24px;
+}
+
+.muted,
+.hint {
+  color: var(--muted);
+}
+
+.hint {
+  font-size: 0.875rem;
+  margin: 0;
+}
+
+a {
+  color: var(--text);
+  text-underline-offset: 3px;
+}
+
+label,
+legend {
+  display: block;
+  font-weight: 550;
+  font-size: 0.9rem;
+  margin-bottom: 6px;
+}
+
+/* Form controls */
+
+input[type="text"],
+textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+textarea {
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+  word-break: break-all;
+}
+
+input[readonly],
+textarea[readonly] {
+  background: var(--bg);
+}
+
+#link-output {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+input::placeholder {
+  color: var(--muted);
+}
+
+input[aria-invalid="true"] {
+  border-color: var(--error);
+}
+
+button {
+  font: inherit;
+  font-weight: 550;
+  padding: 10px 16px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+button.primary {
+  background: var(--accent);
+  color: var(--accent-text);
+}
+
+button.primary:hover {
+  background: #333;
+}
+
+button.secondary {
+  background: var(--surface);
+  color: var(--text);
+  border-color: var(--border);
+}
+
+button.secondary:hover {
+  border-color: var(--text);
+}
+
+button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+button.wide {
+  width: 100%;
+}
+
+:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 2px;
+}
+
+fieldset {
+  border: 0;
+  margin: 0 0 16px;
+  padding: 0;
+}
+
+/* Layout helpers */
+
+.row {
+  display: flex;
+  gap: 8px;
+}
+
+.row input {
+  flex: 1;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 20px;
+}
+
+.actions:last-child {
+  margin-bottom: 0;
+}
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 24px;
+}
+
+.switch {
+  text-align: center;
+  margin-top: 32px;
+  font-size: 0.9rem;
+}
+
+/* Load panel */
+
+details.panel {
+  padding: 0;
+}
+
+details summary {
+  cursor: pointer;
+  padding: 12px 20px;
+  font-weight: 550;
+  font-size: 0.95rem;
+  list-style-position: inside;
+}
+
+details[open] summary {
+  border-bottom: 1px solid var(--border);
+}
+
+#load-form {
+  padding: 16px 20px 20px;
+}
+
+#load-form .row {
+  margin-bottom: 8px;
+}
+
+/* Name list */
+
+.name-list {
+  list-style: none;
+  margin: 0 0 12px;
+  padding: 0;
+}
+
+.name-list li {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.name-list input {
+  flex: 1;
+}
+
+.remove-name {
+  width: 44px;
+  padding: 0;
+  font-size: 1.25rem;
+  line-height: 1;
+  font-weight: 400;
+  color: var(--muted);
+}
+
+.remove-name:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.add-name span {
+  margin-right: 4px;
+}
+
+/* Per-person option */
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+label.checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-weight: 400;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+label.checkbox input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+}
+
+.help-toggle {
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.help-toggle:hover,
+.help-toggle[aria-expanded="true"] {
+  border-color: var(--text);
+  color: var(--text);
+}
+
+.help {
+  font-size: 0.9rem;
+  color: var(--muted);
+  border-left: 2px solid var(--border);
+  padding-left: 12px;
+  margin: 0 0 16px;
+}
+
+/* Personal links */
+
+.personal-links {
+  list-style: none;
+  margin: 0 0 24px;
+  padding: 0;
+}
+
+.personal-links li {
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+.personal-links li:last-child {
+  border-bottom: 1px solid var(--border);
+}
+
+.personal-links .person-name {
+  font-weight: 600;
+  margin-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+
+.personal-links input {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.85rem;
+}
+
+#organizer-hint {
+  margin-bottom: 8px;
+}
+
+#personal-reveal {
+  margin-bottom: 24px;
+}
+
+.personal-hint {
+  margin-top: 12px;
+}
+
+/* Messages */
+
+.error {
+  color: var(--error);
+  font-size: 0.9rem;
+  margin: 8px 0 16px;
+}
+
+.warning {
+  background: var(--warn-bg);
+  border: 1px solid var(--warn-border);
+  border-radius: var(--radius);
+  padding: 10px 12px;
+  font-size: 0.9rem;
+}
+
+/* Output & result */
+
+.output {
+  margin-top: 32px;
+}
+
+.result {
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.result p:first-child {
+  margin-bottom: 4px;
+}
+
+.result-name {
+  font-size: 2rem;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  margin-bottom: 20px;
+  overflow-wrap: anywhere;
+}
+
+#reveal-form {
+  margin-bottom: 24px;
+}
+
+#manual-code {
+  margin-bottom: 16px;
+}
+
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

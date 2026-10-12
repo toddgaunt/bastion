@@ -10,6 +10,8 @@
 !*.css
 !*.sh
 !*.md
+!*.js
+!*.json
 
 # Whitelist specific filenames
 !*.gitignore

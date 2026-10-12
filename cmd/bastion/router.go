@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
+	"github.com/toddgaunt/bastion/internal/app/pairings"
 	"github.com/toddgaunt/bastion/internal/handlers"
 )
 
@@ -42,6 +43,11 @@ func newRouter(staticFileServer http.Handler, env handlers.Env) (chi.Router, err
 		r.Get("/login", env.Login)
 		r.Post("/token", env.Token)
 	})
+
+	r.Get("/.apps/pairings", func(w http.ResponseWriter, r *http.Request) {
+		http.Redirect(w, r, "/.apps/pairings/", http.StatusMovedPermanently)
+	})
+	r.Handle("/.apps/pairings/*", http.StripPrefix("/.apps/pairings", pairings.Handler()))
 
 	return r, nil
 }

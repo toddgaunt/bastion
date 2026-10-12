@@ -1,0 +1,8 @@
+{
+  "name": "pairings",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test"
+  }
+}

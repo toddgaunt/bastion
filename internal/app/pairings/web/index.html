@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Pairings</title>
+  <meta name="description" content="Create a random cycle of pairings and share a link so each person can see who they're paired with.">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="src/app.js"></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1><a href="./" id="home-link">Pairings</a></h1>
+    </header>
+
+    <!-- Generate view -->
+    <section id="generate-view" hidden>
+      <p class="lede">Enter everyone's name to create a random cycle of pairings. Share the link, and each person enters their name to see who they're paired with.</p>
+
+      <details id="load-panel" class="panel">
+        <summary>Load existing list</summary>
+        <form id="load-form" novalidate>
+          <label for="load-input">Code or share link</label>
+          <div class="row">
+            <input id="load-input" type="text" autocomplete="off" spellcheck="false" aria-describedby="load-error">
+            <button type="submit" class="secondary">Load</button>
+          </div>
+          <p id="load-error" class="error" hidden></p>
+          <p class="hint">Loads the names only. Generating again creates all-new pairings.</p>
+        </form>
+      </details>
+
+      <form id="names-form" novalidate>
+        <fieldset>
+          <legend>Participants</legend>
+          <ol id="name-list" class="name-list"></ol>
+          <button type="button" id="add-name" class="secondary add-name">
+            <span aria-hidden="true">+</span> Add name
+          </button>
+        </fieldset>
+        <div class="option">
+          <label class="checkbox" for="per-person">
+            <input type="checkbox" id="per-person">
+            Create a separate link for each person
+          </label>
+          <button type="button" id="per-person-help-toggle" class="help-toggle" aria-expanded="false" aria-controls="per-person-help" aria-label="Why use a link per person?">?</button>
+        </div>
+        <p id="per-person-help" class="help" hidden>
+          Normally everyone gets the same link. Someone curious could decode that link or type in another person's name to see other pairings. With a separate link for each person, each link contains only that person's match, so there is nothing else to find. You'll need to send each person their own link.
+        </p>
+        <p id="names-error" class="error" hidden></p>
+        <button type="submit" class="primary wide">Generate pairings</button>
+      </form>
+
+      <section id="output" class="panel output" hidden aria-labelledby="output-heading">
+        <h2 id="output-heading">Your pairings are ready</h2>
+        <p id="stale-warning" class="warning" hidden>
+          The names have changed since this code was generated. This code no longer matches the list. Press Generate to create a new one.
+        </p>
+        <p id="participant-count" class="muted"></p>
+
+        <div id="group-output">
+          <label for="link-output">Share link</label>
+          <input id="link-output" type="text" readonly spellcheck="false">
+          <div class="actions">
+            <button type="button" id="copy-link" class="primary">Copy link</button>
+            <button type="button" id="share-link" class="secondary" hidden>Share…</button>
+          </div>
+        </div>
+
+        <div id="personal-output" hidden>
+          <p>Send each person their own link.</p>
+          <ul id="personal-links" class="personal-links"></ul>
+        </div>
+
+        <label for="code-output" id="code-label">Code</label>
+        <p id="organizer-hint" class="hint" hidden>Keep this to yourself. It contains every pairing. Paste it into Load existing list to add people later.</p>
+        <textarea id="code-output" rows="3" readonly spellcheck="false"></textarea>
+        <div class="actions">
+          <button type="button" id="copy-code" class="secondary">Copy code</button>
+        </div>
+      </section>
+
+      <p class="switch"><a href="#reveal">I have a code</a></p>
+    </section>
+
+    <!-- Reveal view -->
+    <section id="reveal-view" hidden>
+      <h2>See who you're paired with</h2>
+
+      <p id="reveal-invalid" class="error" hidden>This link is invalid or incomplete. Ask the organizer to resend it.</p>
+
+      <div id="personal-reveal" hidden>
+        <p>This link is for <strong id="personal-for"></strong>.</p>
+        <button type="button" id="personal-reveal-btn" class="primary">Reveal my match</button>
+        <p class="hint personal-hint">Not you? Ask the organizer for your own link.</p>
+      </div>
+
+      <form id="reveal-form" novalidate>
+        <div id="manual-code" hidden>
+          <label for="reveal-code">Code or share link</label>
+          <input id="reveal-code" type="text" autocomplete="off" spellcheck="false">
+        </div>
+        <label for="reveal-name">Your name</label>
+        <div class="row">
+          <input id="reveal-name" type="text" autocomplete="off" aria-describedby="reveal-error">
+          <button type="submit" class="primary">Reveal</button>
+        </div>
+        <p id="reveal-error" class="error" hidden></p>
+      </form>
+
+      <div id="reveal-result" class="panel result" hidden>
+        <p class="muted">You're paired with</p>
+        <p id="result-name" class="result-name"></p>
+        <button type="button" id="hide-result" class="secondary">Hide</button>
+      </div>
+
+      <p class="switch"><a href="./" id="create-link">Create your own pairings</a></p>
+    </section>
+
+    <div id="live" class="visually-hidden" aria-live="polite"></div>
+  </main>
+</body>
+</html>
