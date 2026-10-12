@@ -160,7 +160,6 @@ type Note struct {
 func getLocation() (string, int) {
 	_, file, line, _ := runtime.Caller(2)
 
-	fmt.Println("Module prefix:", ModulePrefix)
 	file, _ = strings.CutPrefix(file, ModulePrefix)
 
 	return file, line
