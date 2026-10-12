@@ -86,7 +86,7 @@ function package() {
 			log-fatal "couldn't package ${package_files[*]}"
 		fi
 	else
-		tar -c -f "$package" "${package_files[@]}"
+		tar -czf "$package" "${package_files[@]}"
 	fi
 }
 
@@ -96,17 +96,16 @@ function usage() {
 
 function main() {
 	local subcommand=${1-all}
-	local args=${*:2}
 
 	case $subcommand in
 		all)
-			build "$args"
+			build "${@:2}"
 			;;
 		clean)
-			clean "$args"
+			clean "${@:2}"
 			;;
 		package)
-			package "$args"
+			package "${@:2}"
 			;;
 		-h|--help|help)
 			usage

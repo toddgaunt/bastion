@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Run this script inside of the directory it resides in.
-cd $(dirname $(realpath $0))
+cd "$(dirname "$(realpath "$0")")"
 # Set much more strict behavior for failed commands and unexpanded variables.
 set -eu
 # Allow's the script to refer to itself.
